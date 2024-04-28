@@ -31,6 +31,7 @@ SRCS = 	main.c \
 	bsp_uart.c \
 	bsp_timer.c \
 	ring_buffer.c \
+	serial.c \
 
 
 OBJ_NAMES = $(SRCS:.c=.o)

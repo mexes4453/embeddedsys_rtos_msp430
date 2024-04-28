@@ -2,6 +2,7 @@
 # include "bsp.h"
 # include "bsp_uart.h"
 # include "bsp_timer.h"
+# include "serial.h"
 # include "led.h"
 
 
@@ -34,14 +35,10 @@ int main(void)
 		//led_toggle();
         BSP_TIMER__DelayMs(1000);
 		//TestPin_toggle();
-		BSP_UART__PutChar('t');
-		BSP_UART__PutChar('b');
-		BSP_UART__PutChar('y');
-		BSP_UART__PutChar('t');
-		BSP_UART__PutChar('e');
-		BSP_UART__PutChar('s');
-		BSP_UART__PutChar('\n');
-		BSP_UART__PutString("Hello World\n");
+        SERIAL__Printf(SERIAL__enTxtColorRed, "Hello World - UART \n");
+		SERIAL__Printf(SERIAL__enTxtColorMagenta, "Hello World - SERIAL: %%; nbr: %d; char: %c; -ve: %d; \n", 3752, 'b', -3752);
+		SERIAL__Printf(SERIAL__enTxtColorBlue,"Hello World - SERIAL: hex: %x; HEX: %X; bin: %b; \n", 555, 555, 38);
+		SERIAL__Printf(0,"Hello world\n");
 
         //while (1);
 	}
