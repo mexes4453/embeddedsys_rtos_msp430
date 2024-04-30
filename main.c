@@ -32,13 +32,17 @@ int main(void)
 
 	while (1)
 	{
-		//led_toggle();
-        BSP_TIMER__DelayMs(1000);
+		led1_toggle();
+        BSP_TIMER__DelayMs(500);
+		led2_toggle();
+        BSP_TIMER__DelayMs(500);
 		//TestPin_toggle();
+#if 0
         SERIAL__Printf(SERIAL__enTxtColorRed, "Hello World - UART \n");
 		SERIAL__Printf(SERIAL__enTxtColorMagenta, "Hello World - SERIAL: %%; nbr: %d; char: %c; -ve: %d; \n", 3752, 'b', -3752);
 		SERIAL__Printf(SERIAL__enTxtColorBlue,"Hello World - SERIAL: hex: %x; HEX: %X; bin: %b; \n", 555, 555, 38);
 		SERIAL__Printf(0,"Hello world\n");
+#endif
 
         //while (1);
 	}

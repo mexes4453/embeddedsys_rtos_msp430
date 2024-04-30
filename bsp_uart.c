@@ -118,7 +118,7 @@ void BSP_UART__ISR_A0_TX_RX(void)
     {
         case BSP_UART__UCA0IV_TX:
         {
-	        led_toggle();
+	        //led_toggle();
             RING_BUFFER__Get(&(uartBuf.txBuf));                            /* Remove chr from tx buffer */
             BSP_UART__ClearInterrupt(BSP_UART__A0, BSP_UART__UCAx_B_TX);   /* clear interrupts Tx only  */
             if ( !(RING_BUFFER__IsEmpty(&(uartBuf.txBuf))) )
