@@ -46,9 +46,18 @@ void BSP_TIMER__DelayMs(uint16_t ticks)
 
 
 
-
+extern void OS__Tswitch(void);
 __attribute__((interrupt(BSP_TIMER__VECTOR_IDX_TA0))) 
 void Timer_A0_ISR( void )
 {
     BSP_TIMER__tick++;
+
+    /* Switch context after 1000 ms -> 1sec */
+    if (BSP_TIMER__tick % 1000 == 0)
+    {
+        BSP__DISABLE_INTERRUPT();
+        OS__Tswitch();
+        BSP__ENABLE_INTERRUPT();
+    }
+
 }

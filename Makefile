@@ -19,11 +19,20 @@ DIR_DEBUG_BIN=$(DIR_DEBUGGER)/bin
 DIR_DEBUG_DRIVER=$(DIR_DEBUGGER)/drivers
 
 # TOOLCHAIN
+#/home/mexes/Documents/ES/dev/msp430/msp430-gcc-9.3.1.11_linux64/bin/msp430-elf-objdump
 CC = $(PATH_DEV_BIN)/msp430-elf-gcc
+TOOL_NM = $(PATH_DEV_BIN)/msp430-elf-nm
+TOOL_OBJCPY = $(PATH_DEV_BIN)/msp430-elf-objcopy
+TOOL_RDELF = $(PATH_DEV_BIN)/msp430-elf-readelf
+TOOL_OBJDMP = $(PATH_DEV_BIN)/msp430-elf-objdump
 DEBUG = LD_LIBRARY_PATH=$(DIR_DEBUG_DRIVER) $(DIR_DEBUG_BIN)/mspdebug
 
+
 # FILES
-TARGET = $(DIR_BIN)/blink
+TARGET = $(DIR_BIN)/blink.elf
+FILE_OUT_INFO = info.txt
+FILE_OUT_DISASS = disassemble.txt
+FILE_OUT_SYMS = symbols.txt
 
 SRCS = 	main.c \
     led.c \
@@ -32,6 +41,7 @@ SRCS = 	main.c \
 	bsp_timer.c \
 	ring_buffer.c \
 	serial.c \
+	os.c \
 
 
 OBJ_NAMES = $(SRCS:.c=.o)
@@ -41,7 +51,7 @@ OBJS = $(patsubst %, $(DIR_OBJ)/%, $(OBJ_NAMES))
 MCU = msp430f5529
 WFLAGS = -Wall -Wextra -Werror -Wshadow
 CFLAGS = -mmcu=$(MCU) $(WFLAGS) $(addprefix -I,$(DIR_INCLUDE)) -Og -g -I$(DIR_PROJECT)
-LDFLAGS = -mmcu=$(MCU) $(addprefix -L,$(DIR_LINKER))
+LDFLAGS = -mmcu=$(MCU) $(addprefix -L,$(DIR_LINKER)) -Wl,-Map=$(TARGET).map
 
 
 # BUILD
@@ -49,6 +59,9 @@ LDFLAGS = -mmcu=$(MCU) $(addprefix -L,$(DIR_LINKER))
 $(TARGET): $(OBJS)
 	@mkdir -p $(dir $@)
 	$(CC) $(LDFLAGS) $^ -o $@
+	$(TOOL_NM) $@ > $(dir $@)/$(FILE_OUT_SYMS)          # store symbols in output file
+	$(TOOL_RDELF) -a $@ > $(dir $@)/$(FILE_OUT_INFO)    # store info of target file in output file
+	$(TOOL_OBJDMP) -d $@ > $(dir $@)/$(FILE_OUT_DISASS) # store disassemble file of target file
 
 # COMPILING - OBJ FILES
 $(DIR_OBJ)/%.o: %.c
