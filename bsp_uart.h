@@ -23,7 +23,7 @@
 #define BSP_UART__UCBRS  ((unsigned char)(8 * UART__DIVISOR_FRACTIONAL))
 
 #define BSP_UART__UC0S16        (0)         /* Over Sampling mode disabled */
-#define BSP_UART__VECTOR_IDX_A0  57         /* 0xFFF0 - vector address     */
+#define BSP_UART__VECTOR_IDX_A0  56         /* 0xFFF0 - vector address     */
 #define BSP_UART__UCA0IV_RX      0x02       /* Interrupt vector identifier */
 #define BSP_UART__UCA0IV_TX      0x04       /* Interrupt vector identifier */
 #define BSP_UART__UCAx_B_RX      (0x01)     /* bit 0 - RX for IE & IFG Reg */

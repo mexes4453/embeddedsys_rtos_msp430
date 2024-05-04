@@ -20,10 +20,11 @@
 #define BSP__DISABLE_WDT() { WDT_CTL = WDT_PW | WDT_HOLD; }
 
 
-#define BSP__ENABLE_INTERRUPT()       asm volatile ("NOP\n\t BIS.W #0008h, SR \n\t NOP \n\t") /* bit 3 - GIE bit */ 
-#define BSP__DISABLE_INTERRUPT()      asm volatile ("NOP\n\t BIC.W #0008h, SR \n\t NOP \n\t") /* bit 3 - GIE bit */
-#define BSP__CRITICAL_SECTION_START() BSP__DISABLE_INTERRUPT()
-#define BSP__CRITICAL_SECTION_END()   BSP__ENABLE_INTERRUPT()
+void ______enableInt(void);
+void ______disableInt(void);
+
+#define BSP__CRITICAL_SECTION_START() ______disableInt()
+#define BSP__CRITICAL_SECTION_END()   ______enableInt()
 /* Function declaration */
 void BSP__ConfigureClock(void);
 //void BSP__EnableInterrupt(void);

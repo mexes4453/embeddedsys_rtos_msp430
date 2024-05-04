@@ -102,7 +102,8 @@ void BSP_UART__PutChar(unsigned char c)
 
 void  BSP_UART__PutString(char *s)
 {
-    for (uint32_t idx =0; s[idx] != '\0'; idx++)
+    uint32_t idx;
+    for (idx =0; s[idx] != '\0'; idx++)
     {
         BSP_UART__PutChar(s[idx]);
     }

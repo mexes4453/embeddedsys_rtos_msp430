@@ -3,7 +3,7 @@
 
 #include "bsp.h"
 
-#define BSP_TIMER__VECTOR_IDX_TA0         (54)   /* 0x0FFEAU - Vector addr */
+#define BSP_TIMER__VECTOR_IDX_TA0         (53)   /* 0x0FFEAU - Vector addr */
 #define BSP_TIMER__TA0_BASE_ADDR          (0x0340U)
 #define BSP_TIMER__TB0_BASE_ADDR          (0x03C0U)
 

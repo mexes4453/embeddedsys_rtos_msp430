@@ -53,11 +53,11 @@ void Timer_A0_ISR( void )
     BSP_TIMER__tick++;
 
     /* Switch context after 1000 ms -> 1sec */
-    if (BSP_TIMER__tick % 1000 == 0)
+    if (BSP_TIMER__tick % 100 == 0)
     {
-        BSP__DISABLE_INTERRUPT();
+        ______disableInt();
         OS__Tswitch();
-        BSP__ENABLE_INTERRUPT();
+        ______enableInt();
     }
 
 }
