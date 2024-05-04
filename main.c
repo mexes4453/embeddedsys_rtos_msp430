@@ -9,7 +9,6 @@
 t_thread t1;
 t_thread t2;
 
-extern t_thread *currThread;
 
 #if 0
 void copy_vector(void)
@@ -19,7 +18,6 @@ void copy_vector(void)
 }
 
 #endif
-//extern t_uartBuf uartBuf;
 
 void main_led1(void)
 {
@@ -44,9 +42,9 @@ void main_led2(void)
 
 int main(void)
 {
-	BSP__DISABLE_WDT();                     // stop watchdog timer
+	BSP__DISABLE_WDT();
 	______disableInt();
-//	BSP__ConfigureClock();                  // default clk freq:1MHz; configure clock 16MHz
+//	BSP__ConfigureClock();                  /* default clk freq:1MHz; configure clock 16MHz */
 	led_init();
 	Init_TestPin();
     BSP_UART__Init();
@@ -55,7 +53,6 @@ int main(void)
 
     OS__ThreadInit(&t1, &main_led1, 1, &t2);
     OS__ThreadInit(&t2, &main_led2, 2, &t1);
-    //currThread = &t1;
     
     ______enableInt();
 

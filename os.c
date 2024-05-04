@@ -1,9 +1,10 @@
 #include "os.h"
 
 
-t_thread *currThread;
 extern void ______enableInt(void);
 extern void ______disableInt(void);
+static t_thread *OS__currThread;
+uint8_t  OS__switchPeriod = OS__SWITCH_TICK;
 
 void OS__ThreadInit(t_thread * const me, f_threadHandler handler,
                                          uint8_t id,
@@ -15,16 +16,15 @@ void OS__ThreadInit(t_thread * const me, f_threadHandler handler,
 
 
     /* Initialize the stack */
-    for (idx=0; idx < STACK_SIZE; idx++)
+    for (idx=0; idx < OS__STACK_SIZE; idx++)
     {
         me->stack[idx] = 0;
     }
      
     /* stack ptr -> R0/PC (align addr to 2) */
-    (me->sp) =  (uint32_t *)((((uint32_t)&((me->stack)[0]) +  STACK_SIZE)/ 2) * 2);
-    *(--(me->sp)) = 0xAA;     /* load SR  */
-    *(--(me->sp)) = 0xAB;     /* load SR  */
-    *(--(me->sp)) = ((uint32_t)handler);  /* load pc with function to call */
+    (me->sp) =  (uint32_t *)((((uint32_t)&((me->stack)[0]) +  OS__STACK_SIZE)/ 2) * 2);
+    *(--(me->sp)) = 0x000000C0;     /* load SR - Enable SCG0(bit6) & SCG1(7)  */
+    *(--(me->sp)) = ((uint32_t)handler);  /* load pc with function to call    */
     *(--(me->sp)) = 0x0000FF0F;    /* R15 */
     *(--(me->sp)) = 0x0000FF0E;    /* R13 */
     *(--(me->sp)) = 0x0000FF0D;    /* R13 */
@@ -43,51 +43,50 @@ extern t_thread t1;
 
 void OS__Sched(void)
 {
-    if (currThread == (t_thread *)0)
+    if (OS__currThread == (t_thread *)0)
     {
-        currThread = &t1;
+        OS__currThread = &t1;
     }
     else
     {
-        currThread = currThread->next; /* Round Robin */
+        OS__currThread = OS__currThread->next; /* Round Robin */
     }
 }
 
 
 void OS__Tswitch(void)
 {
-    //void *sp = (void *)0;
-
-    /* disable interrupt */ 
     ______disableInt();
 
     {
-        /* push registers to stack */
-        //currThread->sp = sp;
-        if ( currThread != (t_thread *)0)
+        
+        if ( OS__currThread != (t_thread *)0)
         {
-            __asm(" pushm.a #12, r15;"
-                  " MOV #currThread, R12 \n\t"  /* R12 = &currThread */
-                  " MOV @R12, R12        \n\t"  /* R12 = currThread => currThread->sp */
-                  " MOV SP, R12         \n\t"  /* COPY the curr sp to the currThread->sp */
+            /**
+             * Save the context of the current thread onto its private stack.
+             * prior to scheduling of the next thread/process */
+            __asm(
+                  " PUSHM.A #12, r15          \n\t"  /* push multiple registers (R4-R15) to stack */
+                  " MOVA &OS__currThread, R12 \n\t"  /* R12 = &currThread = currThread->sp        */
+                  " MOVA SP, 0x0(R12)         \n\t"  /* COPY the curr sp to the currThread->sp    */
                   );
         }
     }
-    OS__Sched(); 
-    //sp = currThread->sp;
-    /* pop registers to current stack */
-    __asm(
-          " MOV #currThread, R12 \n\t"  /* R12 = &currThread */
-          " MOV @R12, R12        \n\t"  /* R12 = currThread => currThread->sp */
-          " MOV @R12, SP         \n\t"  /* COPY the curr sp to the currThread->sp */
-          " popm.a #12, r15      \n\t"
-);
-//    "; mov.w @SP, r14 \n\t"
-//    "; nop \n\t bis.w r14, SR  \n\t"
-//    "; add #2, SP \n\t"
-//    "; pop.a PC \n\t"
 
-    /*  enable interrupt */
+    /* Schedule the next thread/process to run on the CPU - Processor */
+    OS__Sched(); 
+    
+    /* Restore the context of newly scheduled thread from its private stack */
+    __asm(
+          " MOVA &OS__currThread, R12 \n\t"  /* R12 = &currThread = currThread->sp             */
+          " MOVA @R12, SP             \n\t"  /* COPY the curr sp to the currThread->sp         */
+          " POPM.A #12, r15           \n\t"  /* pop multiple registers (R4-R15) as address off */
+                                             /* the current thread/process stack */
+         );
+
     ______enableInt();
+
+    /* Return and pop the PC off the stack of current thread/process */
     __asm__(" RETA \n\t");
 }
+

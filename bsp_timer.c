@@ -1,6 +1,7 @@
 #include "bsp.h"
 #include "bsp_timer.h"
 
+extern uint8_t  OS__switchPeriod; 
 static uint16_t BSP_TIMER__tick=0;
 
 void BSP_TIMER__TA0_Init(t_timerTx0 *t)
@@ -52,8 +53,8 @@ void Timer_A0_ISR( void )
 {
     BSP_TIMER__tick++;
 
-    /* Switch context after 1000 ms -> 1sec */
-    if (BSP_TIMER__tick % 100 == 0)
+    /* Switch context after 100 ms -> 1msec */
+    if (BSP_TIMER__tick % OS__switchPeriod == 0)
     {
         ______disableInt();
         OS__Tswitch();
