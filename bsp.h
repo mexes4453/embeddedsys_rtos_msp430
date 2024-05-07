@@ -10,6 +10,7 @@
 
 //datasheet
 //https://www.ti.com/lit/ds/symlink/msp430f5529.pdf?ts=1713014033864&ref_url=https%253A%252F%252Fwww.mouser.com%252F
+//https://www.ti.com/tool/MSPDRIVERLIB
 
 #define _IO_W_REG_    volatile unsigned short 
 #define _IO_B_REG_    volatile uint8_t
