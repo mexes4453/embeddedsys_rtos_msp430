@@ -5,9 +5,10 @@
 # include "serial.h"
 # include "led.h"
 # include "os.h"
+# include "bsp_i2c.h"
 
-t_thread t1;
-t_thread t2;
+// t_thread t1;
+// t_thread t2;
 
 
 #if 0
@@ -40,6 +41,15 @@ void main_led2(void)
     }
 }
 
+
+
+
+
+
+unsigned char i2cBuffer[BSP_I2C__BUF_SZ];
+
+
+
 int main(void)
 {
 	BSP__DISABLE_WDT();
@@ -49,18 +59,29 @@ int main(void)
 	Init_TestPin();
     BSP_UART__Init();
     BSP_TIMER__TA0_Init( BSP_TIMER__TA0 );
+    BSP_I2C__Init( BSP_I2C__B0 );
 
-
-    OS__ThreadInit(&t1, &main_led1, 1, &t2);
-    OS__ThreadInit(&t2, &main_led2, 2, &t1);
+    /* Initialise buffer to zero */
+    int idx = 0;
+    for (;idx < BSP_I2C__BUF_SZ; idx++ )
+    {
+        i2cBuffer[idx] = 0;
+    }
     
+//    OS__ThreadInit(&t1, &main_led1, 1, &t2);
+//    OS__ThreadInit(&t2, &main_led2, 2, &t1);    
     ______enableInt();
 
 	while (1)
 	{
-		//led1_toggle();
-        //BSP_TIMER__DelayMs(500);
-		//led2_toggle();
+        BSP_TIMER__DelayMs(1000);
+		led1_toggle();
+		led2_toggle();
+        BSP_I2C__Read(BSP_I2C__B0, 0x68, 25, &(i2cBuffer[0]));
+		led2_toggle();
+        BSP_TIMER__DelayMs(1000);
+		led1_toggle();
+		led2_toggle();
         //BSP_TIMER__DelayMs(500);
 		//TestPin_toggle();
 #if 0
