@@ -5,8 +5,16 @@
 #include "led.h"
 
 
-#define BSP_I2C__BUF_SZ          (30)
-#define BSP_I2C__B0_BASE_ADDR    (0x5E0U)
+#define BSP_I2C__BUF_SZ            (30)
+#define BSP_I2C__B0_BASE_ADDR      (0x5E0U)
+#define BSP_I2C__R_STAT_B4_UCBBUSY (0x10)
+#define BSP_I2C__R_IFG_B0_UCRXIFG  (0x01)
+#define BSP_I2C__R_CTL1_B1_UCSTT     (0x02)
+#define BSP_I2C__R_CTL1_B2_UCSTP   (0x04)
+#define BSP_I2C__R_CTL1_B4_UCTR    (0x10)
+#define BSP_I2C__R_CTL1_B76_UCSSEL (0xC0)
+
+
 
 typedef struct
 {

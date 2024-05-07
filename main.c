@@ -62,7 +62,7 @@ int main(void)
     BSP_I2C__Init( BSP_I2C__B0 );
 
     /* Initialise buffer to zero */
-    int idx = 0;
+    unsigned int idx = 0;
     for (;idx < BSP_I2C__BUF_SZ; idx++ )
     {
         i2cBuffer[idx] = 0;
@@ -75,13 +75,14 @@ int main(void)
 	while (1)
 	{
         BSP_TIMER__DelayMs(1000);
-		led1_toggle();
-		led2_toggle();
+		//led1_toggle();
+		//led2_toggle();
         BSP_I2C__Read(BSP_I2C__B0, 0x68, 25, &(i2cBuffer[0]));
-		led2_toggle();
+		//led2_toggle();
         BSP_TIMER__DelayMs(1000);
-		led1_toggle();
-		led2_toggle();
+        while (1){}
+		//led1_toggle();
+		//led2_toggle();
         //BSP_TIMER__DelayMs(500);
 		//TestPin_toggle();
 #if 0

@@ -7,14 +7,14 @@ void BSP_I2C__Init(t_i2cBx *i)
     i->CTL0 |= UCMODE_3 + UCMST;      // I2C master mode
     i->CTL0 |= 0x01;                  // I2C sychronous mode
     i->BR0 = 8;                      // baud rate = SMCLK / 10
-    i->CTL1 |= 0x04;                  // bit3 automatic STOP assertion
-    i->CTL1 |= 0x0C;                  // select clock SMCLK
+    //i->CTL1 |= 0x04;                  // bit3 automatic STOP assertion
+    i->CTL1 |= BSP_I2C__R_CTL1_B76_UCSSEL;                  // select clock SMCLK bit 7 & 6
     //UCB0TBCNT = 0x07;               // TX 7 bytes of data
-    i->I2CSA = 0x0068;                // address slave is 12hex
-    P3SEL |= 0x01;                    // configure I2C pins (device specific)
-                                      // p2.1-sda & p2.2-clk
+    i->I2CSA = 0x68;                // address slave is 0x68
+    P3SEL |= 0x03;                    // configure I2C pins (device specific)
+                                      // p3.0-sda & p3.1-clk
     i->CTL1 &= ~(UCSWRST);            // eUSCI_B in operational state
-    i->IE |= UCTXIE;                  // enable TX-interrupt
+    i->IE |= UCRXIE;                  // enable TX-interrupt
     // GIE;                           // general interrupt enable
 }
 
@@ -36,43 +36,67 @@ UCBxTXBUF = 0x77; // fill TX buffer
 
 #endif
 
-
+static inline void BSP_I2C__Delay(uint8_t t)
+{
+    unsigned int x;
+    while (t)
+    {
+        for (x=50000; x !=0; x--){}
+        t--;
+    }
+}
 
 void BSP_I2C__Read(t_i2cBx *i, unsigned char devAddr, 
                                unsigned char dataLen,
                                unsigned char *dataBuffer)
 {
-    int x=0;
-  i->CTL1 |= UCSWRST;    // put eUSCI_B in reset state
-  i->I2CSA = devAddr;    // address slave is 12hex
-  i->CTL1 &= ~(0x10);    // clear the UCTR Bit4 for receiver mode.
-  i->CTL1 &= ~(UCSWRST);   // eUSCI_B in operational state
-  
-  /* Check that the bus is not busy - busy bit - b4 */
-  led1_toggle();
-  while (i->STAT & 0x10 );
-  for (x=500000; x !=0; x--);
-  led1_toggle();
-  while (dataLen != 0)
-  {
-      i->CTL1 |= (0x02);  /* Generate start condition STT*/
-  
-      // Wait until STT is cleared after sending slave addr
-      while (i->CTL1 & (0x02));
-      led1_toggle();
+    unsigned char byte = i->RXBUF; /* Read buffer to clear RXIFG */
+    i->CTL1 |= UCSWRST;    // put eUSCI_B in reset state
+    i->I2CSA = devAddr;    // address slave is 12hex
+    i->CTL1 &= ~(BSP_I2C__R_CTL1_B4_UCTR);    // clear the UCTR Bit4 for receiver mode.
+    i->CTL1 &= ~(UCSWRST);   // eUSCI_B in operational state
+    
+    
+    while (dataLen > 0)
+    {
 
-      // Poll the RXIFG to check if data is received
-      while (i->IFG & (0x01));
-      led2_toggle();
-      *dataBuffer = i->TXBUF;
-      dataLen--;                   /* decrement dataLen */
-      dataBuffer++;                /* setup buffer for next byte from slave */
-      led2_toggle();
-      /* Send a repeated start */ /* go back to top */ 
-  }
-  
-  /* end communication STP */
-  i->CTL1 |= (0x04);
+    /* Check that the bus is not busy - busy bit - b4 */
+    //led1_toggle();
+    //TestPin_toggle();
+    //BSP_I2C__Delay(1);
+    //while (i->STAT & BSP_I2C__R_STAT_B4_UCBBUSY );
+    //led1_toggle();
+    //TestPin_toggle();
+
+    TestPin_toggle();
+    led1_toggle();
+    i->CTL1 |= (BSP_I2C__R_CTL1_B1_UCSTT);  /* Generate start condition STT*/
+    led1_toggle();
+    TestPin_toggle();
+
+    // Wait until STT is cleared after sending slave addr
+    TestPin_toggle();
+    led1_toggle();
+    while (i->CTL1 & (BSP_I2C__R_CTL1_B1_UCSTT));
+    led1_toggle();
+    TestPin_toggle();
+
+    // Poll the RXIFG to check if data is received
+    TestPin_toggle();
+    led1_toggle();
+    while (!(i->IFG & (BSP_I2C__R_IFG_B0_UCRXIFG + 0x20 )));
+    TestPin_toggle();
+    led1_toggle();
+
+    /* retrieve data */
+    *dataBuffer = i->RXBUF;
+    dataLen--;                   /* decrement dataLen */
+    dataBuffer++;                /* setup buffer for next byte from slave */
+    /* Send a repeated start */ /* go back to top */ 
+    /* end communication STP */
+
+    }
+    i->CTL1 |= (BSP_I2C__R_CTL1_B2_UCSTP);
   
   return; 
 }
