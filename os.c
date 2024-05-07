@@ -66,6 +66,7 @@ void OS__Tswitch(void)
              * Save the context of the current thread onto its private stack.
              * prior to scheduling of the next thread/process */
             __asm(
+                  " PUSHM.A PC                \n\t"  /* store the next instruction on stack       */
                   " PUSHM.A #12, r15          \n\t"  /* push multiple registers (R4-R15) to stack */
                   " MOVA &OS__currThread, R12 \n\t"  /* R12 = &currThread = currThread->sp        */
                   " MOVA SP, 0x0(R12)         \n\t"  /* COPY the curr sp to the currThread->sp    */

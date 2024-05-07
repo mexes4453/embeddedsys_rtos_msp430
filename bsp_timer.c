@@ -53,6 +53,7 @@ void Timer_A0_ISR( void )
 {
     BSP_TIMER__tick++;
 
+#if 0
     /* Switch context after 100 ms -> 1msec */
     if (BSP_TIMER__tick % OS__switchPeriod == 0)
     {
@@ -60,5 +61,6 @@ void Timer_A0_ISR( void )
         OS__Tswitch();
         ______enableInt();
     }
+#endif 
 
 }
