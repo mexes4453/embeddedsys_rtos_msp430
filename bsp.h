@@ -26,6 +26,9 @@ void ______disableInt(void);
 
 #define BSP__CRITICAL_SECTION_START() ______disableInt()
 #define BSP__CRITICAL_SECTION_END()   ______enableInt()
+void inline BSP__CriticalStart(void);
+void inline BSP__CriticalEnd(void);
+
 /* Function declaration */
 void BSP__ConfigureClock(void);
 //void BSP__EnableInterrupt(void);

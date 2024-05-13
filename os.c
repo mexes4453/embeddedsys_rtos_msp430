@@ -1,9 +1,8 @@
 #include "os.h"
 
 
-extern void ______enableInt(void);
-extern void ______disableInt(void);
 static t_thread *OS__currThread;
+static t_thread *OS__readyQueue, *OS__blockedQueue;
 uint8_t  OS__switchPeriod = OS__SWITCH_TICK;
 
 void OS__ThreadInit(t_thread * const me, f_threadHandler handler,
@@ -91,3 +90,190 @@ void OS__Tswitch(void)
     __asm__(" RETA \n\t");
 }
 
+
+
+
+
+void      OS__EnqueueThread(t_thread **threadQueue, t_thread *newThread)
+{
+    t_thread *idxThread;
+
+    /* Check that the address of the queue and that of the thread is valid */
+    if (!threadQueue || !newThread) goto escape;
+    idxThread = *threadQueue;
+    
+    /* Check if queue is empty and add new item immediately */
+    if ( !idxThread ) 
+    {
+        *threadQueue = newThread;
+        newThread->next = OS__THREAD_NULL;
+        goto escape;
+    }
+
+    /* May be the head is the right position */
+    if (newThread->priority > idxThread->priority)
+    {
+        newThread->next = idxThread;
+        *threadQueue = newThread;
+        goto escape;
+    }
+
+    /* Add the new thread to the queue */
+    while ( idxThread->next != OS__THREAD_NULL )
+    {
+        if ( idxThread->next->priority < newThread->priority )
+        {
+            newThread->next = idxThread->next;
+            idxThread->next = newThread;
+            goto escape;
+        }
+        idxThread = idxThread->next;
+    }
+
+    /* Maybe the tail is the right position */
+    idxThread->next = newThread;
+    newThread->next = OS__THREAD_NULL;
+
+escape:
+    return ;
+}
+
+
+
+
+t_thread *OS__DequeueThread(t_thread **threadQueue)
+{
+    t_thread *head = OS__THREAD_NULL;
+
+    /* Check that the queue pointer is valid */
+    if (!threadQueue) goto escape;
+    head = *threadQueue;
+
+    /* Check the queue head is a valid point - queue not empty */
+    if (!head) goto escape;
+
+    /**
+     * Remove head from the top of the queue by assigning next thread
+     * as the new head */
+    *threadQueue = head->next;
+
+escape:
+    return (head);
+}
+
+void      OS__Suspend(int evtSig)
+{
+    BSP__CriticalStart();
+    OS__currThread->event = evtSig;
+    OS__currThread->status = OS__enStatusSuspended;
+    OS__Tswitch();
+    BSP__CriticalEnd();
+}
+
+
+
+void      OS__Resume(int evtSig)
+{
+    t_thread *t = OS__THREAD_NULL;
+
+    t = OS__currThread;
+
+    BSP__CriticalStart();
+    while (t->next != OS__currThread)
+    {
+        t = t->next;
+        if ((t->status == OS__enStatusSuspended) && 
+            (t->event == evtSig))
+        {
+            t->status = OS__enStatusReady;
+            OS__EnqueueThread(&OS__readyQueue, t);
+        }
+    }
+    BSP__CriticalEnd();
+}
+
+
+
+
+/*----------------------------------------------------------------*/
+/*                          Semaphore                             */
+/*----------------------------------------------------------------*/
+
+int OS__Block(t_osSemaphore *s)
+{
+    OS__currThread->status = OS__enStatusBlocked;
+    OS__EnqueueThread(&(s->threadQueue), OS__currThread);
+    OS__Tswitch();
+}
+
+
+
+int OS__Signal(t_osSemaphore *s)
+{
+    t_thread *t = OS__DequeueThread(&s->threadQueue);
+    t->status = OS__enStatusReady;
+    OS__EnqueueThread(&(OS__readyQueue), t);
+}
+
+
+
+int OS__P_CountSemaphore(t_osSemaphore *s)
+{
+
+    BSP__CriticalStart();
+    s->value--;
+    if (s->value < 0)
+    {
+        block(s);
+    }
+    BSP__CriticalEnd();
+}
+
+
+
+int OS__V_CountSemaphore(t_osSemaphore *s)
+{
+
+    BSP__CriticalStart();
+    s->value++;
+    if (s->value <= 0)
+    {
+        signal(s);
+    }
+    BSP__CriticalEnd();
+}
+
+
+
+int OS__P_BinSemaphore(t_osSemaphore *s)
+{
+
+    BSP__CriticalStart();
+    s->value--;
+    if (s->value == 1)
+    {
+        s->value = 0;
+    }
+    else
+    {
+        block(s);
+    }
+    BSP__CriticalEnd();
+}
+
+
+
+int OS__V_BinSemaphore(t_osSemaphore *s)
+{
+
+    BSP__CriticalStart();
+    if (s->threadQueue == 0)
+    {
+        s->value = 1;
+    }
+    else
+    {
+        signal(s);
+    }
+    BSP__CriticalEnd();
+}
