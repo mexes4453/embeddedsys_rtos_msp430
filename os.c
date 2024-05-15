@@ -2,7 +2,7 @@
 
 
 static t_thread *OS__currThread;
-static t_thread *OS__readyQueue, *OS__blockedQueue;
+static t_thread *OS__readyQueue, *OS__blockedQueue, *OS__freeList;
 uint8_t  OS__switchPeriod = OS__SWITCH_TICK;
 
 void OS__ThreadInit(t_thread * const me, f_threadHandler handler,
@@ -174,9 +174,7 @@ void      OS__Suspend(int evtSig)
 
 void      OS__Resume(int evtSig)
 {
-    t_thread *t = OS__THREAD_NULL;
-
-    t = OS__currThread;
+    t_thread *t = OS__currThread;
 
     BSP__CriticalStart();
     while (t->next != OS__currThread)

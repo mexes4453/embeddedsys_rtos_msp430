@@ -2,12 +2,15 @@
 #ifndef OS_H
 #define OS_H
 #include <stdint.h>
+#include "./lib/xqueue/xqueue.h"
 
 #define NO_OF_THREADS        2
 #define NO_OF_CPU_REGS       15
 #define OS__STACK_SIZE       100 /* 100 * 4bytes (32bits)      */
 #define OS__SWITCH_TICK      100 /* context switch every 100ms */
 #define OS__VOID             (void *)0
+
+
 
 typedef struct s_thread t_thread;
 typedef void (*f_threadHandler)(void);
@@ -19,10 +22,15 @@ typedef enum
     OS__enStatusSuspended,
 }   tenOsThreadStatus;
 
+
+
+
 typedef enum
 {
     OS__enEvtSigTimer=0,
 }   tenOsEvtSig;
+
+
 
 struct s_thread
 {
@@ -33,6 +41,7 @@ struct s_thread
     uint32_t          stack[OS__STACK_SIZE];
     tenOsThreadStatus status;
     tenOsEvtSig       event;
+    uint8_t           period;
 };
 
 typedef struct 
@@ -41,13 +50,6 @@ typedef struct
     t_thread *threadQueue; /* Queue to add threads waiting on semaphore */
 }   t_osSemaphore;
 
-
-typedef struct 
-{
-    int value;
-    t_thread *threadQueue;
-    t_osMutex;
-};
 
 #define OS__THREAD_NULL      (t_thread *)0
 
