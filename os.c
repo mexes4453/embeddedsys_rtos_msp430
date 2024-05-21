@@ -1,29 +1,68 @@
 #include "os.h"
 
 
-static t_thread *OS__currThread;
-static t_thread *OS__readyQueue, *OS__blockedQueue, *OS__freeList;
+static t_xqueue *OS__currThread;
+
+//static t_thread OS__threads[NO_OF_THREADS];
+static t_xqueue OS__threadPool[NO_OF_THREADS];
+static t_xqueue *OS__threadQueueFree, *OS__threadQueueReady; 
+static t_xqueue *OS__threadQueueSleep, *OS__threadQueueBlocked;
+static uint8_t OS__threadId = 0;
+
 uint8_t  OS__switchPeriod = OS__SWITCH_TICK;
 
-void OS__ThreadInit(t_thread * const me, f_threadHandler handler,
-                                         uint8_t id,
-                                         t_thread *next)
+
+
+void OS__Init(void)
+{
+    OS__threadQueueFree = XQUEUE__StaticInit(XQUEUE__enPriorityFifo, &(OS__threadPool[0]),
+                                                                     XQUEUE__VOID,
+                                                                     NO_OF_THREADS,
+                                                                     sizeof(t_thread));
+}
+
+
+
+tenOsRetCode OS__Fork(t_thread *t, f_threadHandler handler, uint8_t priority, uint8_t period)
+{
+    tenOsRetCode retCode = OS__enRetErrForkFailed;
+    t_xqueue     *qEntry = XQUEUE__Dequeue(&OS__threadQueueFree);
+
+    if (!qEntry) goto escape;
+
+    t->tid = OS__threadId++;
+    t->status = OS__enStatusReady;
+    t->period = period;
+    t->priority = priority;
+    t->handler = handler;
+    OS__ThreadInit( t );
+    qEntry->content = (void *)t;
+    qEntry->priority = priority;
+    XQUEUE__StaticEnqueue(&OS__threadQueueReady, qEntry);
+    retCode = OS__enRetSuccess;
+
+escape:
+    return (retCode);
+}
+
+
+
+
+void OS__ThreadInit(t_thread * const me)
 {
     uint8_t idx;
-    me->next = next;
-    me->tid = id;
-
 
     /* Initialize the stack */
     for (idx=0; idx < OS__STACK_SIZE; idx++)
     {
         me->stack[idx] = 0;
     }
-     
+    
+    /* Set to default status - Ready */
     /* stack ptr -> R0/PC (align addr to 2) */
     (me->sp) =  (uint32_t *)((((uint32_t)&((me->stack)[0]) +  OS__STACK_SIZE)/ 2) * 2);
     *(--(me->sp)) = 0x000000C0;     /* load SR - Enable SCG0(bit6) & SCG1(7)  */
-    *(--(me->sp)) = ((uint32_t)handler);  /* load pc with function to call    */
+    *(--(me->sp)) = ((uint32_t)(me->handler));  /* load pc with function to call    */
     *(--(me->sp)) = 0x0000FF0F;    /* R15 */
     *(--(me->sp)) = 0x0000FF0E;    /* R13 */
     *(--(me->sp)) = 0x0000FF0D;    /* R13 */
@@ -93,79 +132,12 @@ void OS__Tswitch(void)
 
 
 
-
-void      OS__EnqueueThread(t_thread **threadQueue, t_thread *newThread)
-{
-    t_thread *idxThread;
-
-    /* Check that the address of the queue and that of the thread is valid */
-    if (!threadQueue || !newThread) goto escape;
-    idxThread = *threadQueue;
-    
-    /* Check if queue is empty and add new item immediately */
-    if ( !idxThread ) 
-    {
-        *threadQueue = newThread;
-        newThread->next = OS__THREAD_NULL;
-        goto escape;
-    }
-
-    /* May be the head is the right position */
-    if (newThread->priority > idxThread->priority)
-    {
-        newThread->next = idxThread;
-        *threadQueue = newThread;
-        goto escape;
-    }
-
-    /* Add the new thread to the queue */
-    while ( idxThread->next != OS__THREAD_NULL )
-    {
-        if ( idxThread->next->priority < newThread->priority )
-        {
-            newThread->next = idxThread->next;
-            idxThread->next = newThread;
-            goto escape;
-        }
-        idxThread = idxThread->next;
-    }
-
-    /* Maybe the tail is the right position */
-    idxThread->next = newThread;
-    newThread->next = OS__THREAD_NULL;
-
-escape:
-    return ;
-}
-
-
-
-
-t_thread *OS__DequeueThread(t_thread **threadQueue)
-{
-    t_thread *head = OS__THREAD_NULL;
-
-    /* Check that the queue pointer is valid */
-    if (!threadQueue) goto escape;
-    head = *threadQueue;
-
-    /* Check the queue head is a valid point - queue not empty */
-    if (!head) goto escape;
-
-    /**
-     * Remove head from the top of the queue by assigning next thread
-     * as the new head */
-    *threadQueue = head->next;
-
-escape:
-    return (head);
-}
-
 void      OS__Suspend(int evtSig)
 {
+    t_thread *t = (t_thread *)(OS__currThread->content);
     BSP__CriticalStart();
-    OS__currThread->event = evtSig;
-    OS__currThread->status = OS__enStatusSuspended;
+    t->event = evtSig;
+    t->status = OS__enStatusSuspended;
     OS__Tswitch();
     BSP__CriticalEnd();
 }
@@ -174,7 +146,7 @@ void      OS__Suspend(int evtSig)
 
 void      OS__Resume(int evtSig)
 {
-    t_thread *t = OS__currThread;
+    t_thread *t = (t_thread *)(OS__currThread->content);
 
     BSP__CriticalStart();
     while (t->next != OS__currThread)
@@ -184,7 +156,8 @@ void      OS__Resume(int evtSig)
             (t->event == evtSig))
         {
             t->status = OS__enStatusReady;
-            OS__EnqueueThread(&OS__readyQueue, t);
+            XQUEUE__StaticEnqueue(&OS__threadQueueReady, t);
+            //OS__EnqueueThread(&OS__readyQueue, t);
         }
     }
     BSP__CriticalEnd();
@@ -199,8 +172,10 @@ void      OS__Resume(int evtSig)
 
 int OS__Block(t_osSemaphore *s)
 {
-    OS__currThread->status = OS__enStatusBlocked;
-    OS__EnqueueThread(&(s->threadQueue), OS__currThread);
+    t_thread *t = (t_thread *)(s->threadQueue->content);
+    t->status = OS__enStatusBlocked;
+    XQUEUE__StaticEnqueue(&(s->threadQueue), t);
+    //OS__EnqueueThread(&(s->threadQueue), OS__currThread);
     OS__Tswitch();
 }
 
@@ -210,7 +185,8 @@ int OS__Signal(t_osSemaphore *s)
 {
     t_thread *t = OS__DequeueThread(&s->threadQueue);
     t->status = OS__enStatusReady;
-    OS__EnqueueThread(&(OS__readyQueue), t);
+    XQUEUE__StaticEnqueue(&OS__threadQueueReady, t);
+    //OS__EnqueueThread(&(OS__readyQueue), t);
 }
 
 

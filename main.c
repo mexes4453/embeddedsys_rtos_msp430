@@ -69,6 +69,8 @@ int main(void)
     }
     
 //    OS__ThreadInit(&t1, &main_led1, 1, &t2);
+//      OS__Kfork(&main_led1, 0, 10);
+//      OS__Kfork(&main_led2, 0, 10);
 //    OS__ThreadInit(&t2, &main_led2, 2, &t1);    
     ______enableInt();
 

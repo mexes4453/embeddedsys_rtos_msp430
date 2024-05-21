@@ -2,9 +2,9 @@
 #ifndef OS_H
 #define OS_H
 #include <stdint.h>
-#include "./lib/xqueue/xqueue.h"
+#include "./xlib/xqueue/xqueue.h"
 
-#define NO_OF_THREADS        2
+#define NO_OF_THREADS        10
 #define NO_OF_CPU_REGS       15
 #define OS__STACK_SIZE       100 /* 100 * 4bytes (32bits)      */
 #define OS__SWITCH_TICK      100 /* context switch every 100ms */
@@ -19,8 +19,19 @@ typedef enum
     OS__enStatusReady=0,
     OS__enStatusRunning,
     OS__enStatusBlocked,
-    OS__enStatusSuspended,
+    OS__enStatusSleep,
+    OS__enStatusFree,
+    OS__enStatusSuspended
 }   tenOsThreadStatus;
+
+
+
+typedef enum e_schedPolicy
+{
+    OS__enSchedPolicyRoundRobin = 0,
+    OS__enSchedPolicyPriority,
+    OS__enSchedPolicyEDF,        /* Earliest deadline first */
+}   tenOsSchedPolicy;
 
 
 
@@ -35,21 +46,27 @@ typedef enum
 struct s_thread
 {
     uint32_t          *sp;
-    t_thread          *next;
     uint8_t           tid;
-    uint8_t           priority;
     uint32_t          stack[OS__STACK_SIZE];
     tenOsThreadStatus status;
     tenOsEvtSig       event;
     uint8_t           period;
+    uint8_t           priority;
+    f_threadHandler   handler;
 };
 
 typedef struct 
 {
     int value;
-    t_thread *threadQueue; /* Queue to add threads waiting on semaphore */
+    t_xqueue *threadQueue; /* Queue to add threads waiting on semaphore */
 }   t_osSemaphore;
 
+
+typedef enum e_osRetCode
+{
+    OS__enRetSuccess = 0,
+    OS__enRetErrForkFailed,
+} tenOsRetCode;
 
 #define OS__THREAD_NULL      (t_thread *)0
 
@@ -63,9 +80,8 @@ extern void ______disableInt(void);
 extern void inline BSP__CriticalStart(void);
 extern void inline BSP__CriticalEnd(void);
 
-void OS__ThreadInit(t_thread * const me, f_threadHandler handler,
-                                         uint8_t id,
-                                         t_thread *next);
+void      OS__Init(void);
+void      OS__ThreadInit(t_thread * const me);
 void      OS__Tswitch(void);
 void      OS__Sched(void);
 void      OS__EnqueueThread(t_thread **threadQueue, t_thread *newThread);
