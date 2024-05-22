@@ -1,4 +1,4 @@
-ifndef BSP_UART_H
+#ifndef BSP_UART_H
 #define BSP_UART_H
 
 //#include <assert.h>

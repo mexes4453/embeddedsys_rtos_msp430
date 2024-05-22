@@ -266,6 +266,32 @@ escape:
     return (item);
 }
 
+
+
+
+
+char  XQUEUE__FindNode(t_xqueue **q, t_xqueue *n)
+{
+    t_xqueue *head;
+    char     ret = 0; 
+
+    if (!q || !n) goto escape;
+    head = *q;
+
+    if (!head) goto escape;
+    while(head != XQUEUE__NULL)
+    {
+        if ( head == n)
+        {
+            ret = 1;
+            goto escape;
+        }
+        head = head->next;
+    }
+
+escape:
+    return (ret);
+}
 #if 0
 
 void	XQUEUE__DynAddBack(t_list **lst, t_list *new)

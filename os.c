@@ -6,15 +6,22 @@ static t_thread         OS__threads[OS__NO_OF_THREADS];
 static t_xqueue         OS__threadPool[OS__NO_OF_THREADS];
 static t_xqueue        *OS__threadQueueFree, *OS__threadQueueReady; 
 static t_xqueue        *OS__threadQueueSleep, *OS__threadQueueBlocked;
-static t_xqueue        *OS__currThread;
-static uint8_t          OS__switchPeriod = OS__SWITCH_TICK;
+static t_thread        *OS__currThread;
+static t_xqueue        *OS__currThreadNode;
 static tenOsSchedPolicy OS__schedPolicy;
+uint8_t  const               OS__switchPeriod = OS__SWITCH_TICK;
 
 
-void      OS__LowPoweMode(void)
+static void      OS__LowPowerMode(void)
 {
+    int volatile cnt = 10000;
     while (1)
     {
+        while (cnt--){}
+        /* flash light */
+        led1_toggle();
+        while (cnt--){}
+        led2_toggle();
         /* nothing for cpu to do */
         /* switch to low power mode with interrupt */
     }
@@ -22,11 +29,13 @@ void      OS__LowPoweMode(void)
 
 void OS__Init(tenOsSchedPolicy schedPolicy)
 {
-    OS__threadQueueFree = XQUEUE__StaticInit(XQUEUE__enPriorityFifo, &(OS__threadPool[0]),
-                                                                     XQUEUE__VOID,
-                                                                     OS__NO_OF_THREADS);
     OS__schedPolicy = schedPolicy;
-    OS__Fork(OS__LowPoweMode, 0, 1); /* 1Hz */
+
+    OS__threadQueueFree = XQUEUE__StaticInit(XQUEUE__enPriorityFifo, &(OS__threadPool[0]),
+                                                                     OS__NO_OF_THREADS,
+                                                                     XQUEUE__VOID);
+
+    OS__Fork(OS__LowPowerMode, 0, 1); /* 1Hz */
 }
 
 
@@ -59,6 +68,40 @@ escape:
 }
 
 
+tenOsRetCode OS__Kill(t_xqueue *n)
+{
+    tenOsRetCode retCode = OS__enRetErrKillFailed;
+    t_thread *t = OS__THREAD_NULL;
+
+    if (!n) goto escape;
+
+    if ( XQUEUE__FindNode(&OS__threadQueueReady, n) )
+    {
+        t = (t_thread *)(n->content);
+        t->status = OS__enStatusFree;
+
+        /* head */
+        if ( (n->prev == XQUEUE__NULL) && (n== OS__threadQueueReady) )
+        {
+            OS__threadQueueReady = n->next;
+            n->next->prev = n->prev;
+        }
+        else if (n->prev != XQUEUE__NULL && (n->next != XQUEUE__NULL)) /* middle node */
+        {
+            n->prev->next = n->next;
+            n->next->prev = n->prev;
+        }
+        else  /* last node */
+        {
+            n->prev->next = XQUEUE__NULL;
+            n->prev = XQUEUE__NULL;
+        }
+        retCode =  OS__enRetSuccess;
+    }
+escape:
+    return (retCode);
+
+}
 
 
 void OS__ThreadInit(t_thread * const me)
@@ -93,13 +136,38 @@ void OS__ThreadInit(t_thread * const me)
 
 void OS__Sched(void)
 {
-    if (OS__currThread == (t_thread *)0)
+    if (OS__currThread == OS__THREAD_NULL)
     {
-        OS__currThread = &t1;
+        /**
+         * This path will be taken during the start of the OS and 
+         * It will schedule the thread at the top of the ready queue.
+         * The low power mode (idle thread) will be scheduled if its 
+         * the only thread in the queue.*/
+        OS__currThreadNode = OS__threadQueueReady;
+        OS__currThread = (t_thread *)XQUEUE__GetItem(OS__currThreadNode);
     }
     else
     {
-        OS__currThread = OS__currThread->next; /* Round Robin */
+        /**
+         * Subsequent context/TaskSwitch will take this path and will be
+         * performed based on the initiated scheduling policy.  */
+        switch (OS__schedPolicy)
+        {
+            case OS__enSchedPolicyEDF:
+            case OS__enSchedPolicyPriority:
+            default: /* Roundrobin */
+            {
+                if (OS__currThreadNode->next == XQUEUE__NULL)
+                {
+                    OS__currThreadNode = OS__threadQueueReady;
+                }
+                else
+                {
+                    OS__currThreadNode = OS__currThreadNode->next;
+                }
+                OS__currThread = (t_thread *)XQUEUE__GetItem(OS__currThreadNode);
+            }
+        }
     }
 }
 
@@ -143,10 +211,10 @@ void OS__Tswitch(void)
 
 
 
-
+#if 0
 void      OS__Suspend(int evtSig)
 {
-    t_thread *t = (t_thread *)(OS__currThread->content);
+    t_thread *t = (t_thread *)(OS__currThreadNode->content);
     BSP__CriticalStart();
     t->event = evtSig;
     t->status = OS__enStatusSuspended;
@@ -158,7 +226,7 @@ void      OS__Suspend(int evtSig)
 
 void      OS__Resume(int evtSig)
 {
-    t_thread *t = (t_thread *)(OS__currThread->content);
+    t_thread *t = (t_thread *)(OS__currThreadNode->content);
 
     BSP__CriticalStart();
     while (t->next != OS__currThread)
@@ -168,7 +236,7 @@ void      OS__Resume(int evtSig)
             (t->event == evtSig))
         {
             t->status = OS__enStatusReady;
-            XQUEUE__StaticEnqueue(&OS__threadQueueReady, t);
+            //XQUEUE__StaticEnqueue(&OS__threadQueueReady, t);
             //OS__EnqueueThread(&OS__readyQueue, t);
         }
     }
@@ -210,7 +278,7 @@ int OS__P_CountSemaphore(t_osSemaphore *s)
     s->value--;
     if (s->value < 0)
     {
-        block(s);
+        OS__Block(s);
     }
     BSP__CriticalEnd();
 }
@@ -224,7 +292,7 @@ int OS__V_CountSemaphore(t_osSemaphore *s)
     s->value++;
     if (s->value <= 0)
     {
-        signal(s);
+        OS__Signal(s);
     }
     BSP__CriticalEnd();
 }
@@ -242,7 +310,7 @@ int OS__P_BinSemaphore(t_osSemaphore *s)
     }
     else
     {
-        block(s);
+        OS__Block(s);
     }
     BSP__CriticalEnd();
 }
@@ -259,7 +327,8 @@ int OS__V_BinSemaphore(t_osSemaphore *s)
     }
     else
     {
-        signal(s);
+        OS__Signal(s);
     }
     BSP__CriticalEnd();
 }
+#endif

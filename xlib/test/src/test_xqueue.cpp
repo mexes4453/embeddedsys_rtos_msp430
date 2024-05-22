@@ -281,5 +281,16 @@ TEST_CASE("XQUEUE: FIFO PRIORITY", "[xqueue][fifo]")
         REQUIRE( XQUEUE__StaticEnqueue(&dataQueueBusy, dataQueueBusy) == XQUEUE__enRetErrDupEnqueueAttempt );
         REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 1 );
         TESTER_SECTION_E();
+
+
+        TESTER_SECTION_S(XQUEUE: Test the findNode method);
+        REQUIRE( XQUEUE__FindNode((t_xqueue **)0, XQUEUE__NULL ) == 0);
+        REQUIRE( XQUEUE__FindNode((t_xqueue **)0, &(qPool[0]) ) == 0);
+        REQUIRE( XQUEUE__FindNode(&dataQueueBusy, XQUEUE__NULL ) == 0);
+        REQUIRE( XQUEUE__FindNode(&dataQueueBusy, &(qPool[0]) ) == 1);
+        REQUIRE( XQUEUE__FindNode(&dataQueueBusy, &(qPool[1]) ) == 0);
+        REQUIRE( XQUEUE__FindNode(&dataQueueFree, &(qPool[1]) ) == 1);
+        REQUIRE( XQUEUE__FindNode(&dataQueueFree, &(qPool[0]) ) == 0);
+        TESTER_SECTION_E();
     }
 }

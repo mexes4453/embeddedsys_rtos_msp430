@@ -51,9 +51,10 @@ extern void OS__Tswitch(void);
 __attribute__((interrupt(BSP_TIMER__VECTOR_IDX_TA0))) 
 void Timer_A0_ISR( void )
 {
+    extern uint8_t OS__switchPeriod;
     BSP_TIMER__tick++;
 
-#if 0
+#if 1
     /* Switch context after 100 ms -> 1msec */
     if (BSP_TIMER__tick % OS__switchPeriod == 0)
     {

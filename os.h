@@ -16,11 +16,12 @@
 #define OS_H
 #include <stdint.h>
 #include "./xlib/xqueue/xqueue.h"
+#include "led.h"
 
 #define OS__NO_OF_THREADS        10
 #define NO_OF_CPU_REGS       15
 #define OS__STACK_SIZE       100 /* 100 * 4bytes (32bits)      */
-#define OS__SWITCH_TICK      1 /* context switch every 1ms */
+#define OS__SWITCH_TICK      1000 /* context switch every 1ms */
 #define OS__VOID             (void *)0
 
 
@@ -80,6 +81,7 @@ typedef enum e_osRetCode
 {
     OS__enRetSuccess = 0,
     OS__enRetErrForkFailed,
+    OS__enRetErrKillFailed,
 } tenOsRetCode;
 
 #define OS__THREAD_NULL      (t_thread *)0
@@ -95,7 +97,6 @@ extern void inline BSP__CriticalStart(void);
 extern void inline BSP__CriticalEnd(void);
 
 void      OS__Init(tenOsSchedPolicy schedPolicy);
-void      OS__LowPoweMode(void);
 void      OS__ThreadInit(t_thread * const me);
 void      OS__Tswitch(void);
 void      OS__Sched(void);
@@ -109,5 +110,7 @@ int       OS__P_CountSemaphore(t_osSemaphore *s);
 int       OS__V_CountSemaphore(t_osSemaphore *s);
 int       OS__P_BinSemaphore(t_osSemaphore *s);
 int       OS__V_BinSemaphore(t_osSemaphore *s);
+tenOsRetCode OS__Fork(f_threadHandler handler, uint8_t priority, uint8_t period);
+tenOsRetCode OS__Kill(t_xqueue *n);
 
 #endif /* OS_H */

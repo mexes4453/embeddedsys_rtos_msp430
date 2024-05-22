@@ -58,7 +58,7 @@ int main(void)
 	led_init();
 	Init_TestPin();
     BSP_UART__Init();
-//    BSP_TIMER__TA0_Init( BSP_TIMER__TA0 );
+    BSP_TIMER__TA0_Init( BSP_TIMER__TA0 );
 //    BSP_I2C__Init( BSP_I2C__B0 );
 
     /* Initialise buffer to zero */
@@ -78,7 +78,7 @@ int main(void)
 
 	while (1)
 	{
-        BSP_TIMER__DelayMs(1000);
+        BSP_TIMER__DelayMs(10);
 		//led1_toggle();
 		//led2_toggle();
         //BSP_I2C__Read(BSP_I2C__B0, 0x68, 25, &(i2cBuffer[0]));
