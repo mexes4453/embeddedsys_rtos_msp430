@@ -1,41 +1,54 @@
 #include "os.h"
 
 
-static t_xqueue *OS__currThread;
 
-//static t_thread OS__threads[NO_OF_THREADS];
-static t_xqueue OS__threadPool[NO_OF_THREADS];
-static t_xqueue *OS__threadQueueFree, *OS__threadQueueReady; 
-static t_xqueue *OS__threadQueueSleep, *OS__threadQueueBlocked;
-static uint8_t OS__threadId = 0;
-
-uint8_t  OS__switchPeriod = OS__SWITCH_TICK;
-
+static t_thread         OS__threads[OS__NO_OF_THREADS];
+static t_xqueue         OS__threadPool[OS__NO_OF_THREADS];
+static t_xqueue        *OS__threadQueueFree, *OS__threadQueueReady; 
+static t_xqueue        *OS__threadQueueSleep, *OS__threadQueueBlocked;
+static t_xqueue        *OS__currThread;
+static uint8_t          OS__switchPeriod = OS__SWITCH_TICK;
+static tenOsSchedPolicy OS__schedPolicy;
 
 
-void OS__Init(void)
+void      OS__LowPoweMode(void)
+{
+    while (1)
+    {
+        /* nothing for cpu to do */
+        /* switch to low power mode with interrupt */
+    }
+}
+
+void OS__Init(tenOsSchedPolicy schedPolicy)
 {
     OS__threadQueueFree = XQUEUE__StaticInit(XQUEUE__enPriorityFifo, &(OS__threadPool[0]),
                                                                      XQUEUE__VOID,
-                                                                     NO_OF_THREADS,
-                                                                     sizeof(t_thread));
+                                                                     OS__NO_OF_THREADS);
+    OS__schedPolicy = schedPolicy;
+    OS__Fork(OS__LowPoweMode, 0, 1); /* 1Hz */
 }
 
 
 
-tenOsRetCode OS__Fork(t_thread *t, f_threadHandler handler, uint8_t priority, uint8_t period)
+tenOsRetCode OS__Fork(f_threadHandler handler, uint8_t priority, uint8_t period)
 {
     tenOsRetCode retCode = OS__enRetErrForkFailed;
     t_xqueue     *qEntry = XQUEUE__Dequeue(&OS__threadQueueFree);
+    uint8_t      idx;
+    t_thread     *t = OS__THREAD_NULL;
 
     if (!qEntry) goto escape;
-
-    t->tid = OS__threadId++;
+    idx = qEntry->qid;                 /* the qid is used as idx for thread array */
+    t = &(OS__threads[idx]);
+    t->tid = idx;
     t->status = OS__enStatusReady;
     t->period = period;
     t->priority = priority;
     t->handler = handler;
     OS__ThreadInit( t );
+
+    /* Embed the thread inside the queue node */
     qEntry->content = (void *)t;
     qEntry->priority = priority;
     XQUEUE__StaticEnqueue(&OS__threadQueueReady, qEntry);
@@ -77,7 +90,6 @@ void OS__ThreadInit(t_thread * const me)
     *(--(me->sp)) = 0x0000FF04;    /* R04 */
 }
 
-extern t_thread t1;
 
 void OS__Sched(void)
 {

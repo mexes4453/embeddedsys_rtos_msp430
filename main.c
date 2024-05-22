@@ -47,7 +47,7 @@ void main_led2(void)
 
 
 unsigned char i2cBuffer[BSP_I2C__BUF_SZ];
-
+tenOsRetCode osRetCode;
 
 
 int main(void)
@@ -58,8 +58,8 @@ int main(void)
 	led_init();
 	Init_TestPin();
     BSP_UART__Init();
-    BSP_TIMER__TA0_Init( BSP_TIMER__TA0 );
-    BSP_I2C__Init( BSP_I2C__B0 );
+//    BSP_TIMER__TA0_Init( BSP_TIMER__TA0 );
+//    BSP_I2C__Init( BSP_I2C__B0 );
 
     /* Initialise buffer to zero */
     unsigned int idx = 0;
@@ -68,6 +68,10 @@ int main(void)
         i2cBuffer[idx] = 0;
     }
     
+    /* Initialise the operating system  */
+    OS__Init(OS__enSchedPolicyRoundRobin);
+    osRetCode = OS__Fork(main_led1, 4, 20);
+    osRetCode = OS__Fork(main_led2, 5, 50);
 //    OS__ThreadInit(&t1, &main_led1, 1, &t2);
 //      OS__Kfork(&main_led1, 0, 10);
 //      OS__Kfork(&main_led2, 0, 10);
@@ -79,10 +83,8 @@ int main(void)
         BSP_TIMER__DelayMs(1000);
 		//led1_toggle();
 		//led2_toggle();
-        BSP_I2C__Read(BSP_I2C__B0, 0x68, 25, &(i2cBuffer[0]));
+        //BSP_I2C__Read(BSP_I2C__B0, 0x68, 25, &(i2cBuffer[0]));
 		//led2_toggle();
-        BSP_TIMER__DelayMs(1000);
-        while (1){}
 		//led1_toggle();
 		//led2_toggle();
         //BSP_TIMER__DelayMs(500);

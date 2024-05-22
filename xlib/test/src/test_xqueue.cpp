@@ -238,6 +238,25 @@ TEST_CASE("XQUEUE: FIFO PRIORITY", "[xqueue][fifo]")
         REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 5 );
         TESTER_SECTION_E();
 
+        TESTER_SECTION_S(XQUEUE: Check the that the queue node id is valid );
+        XQUEUE__StaticDeInit(&dataQueueBusy);
+        dataQueueFree = XQUEUE__StaticInit(XQUEUE__enLifo, &(qPool[0]), XQUEUE__SIZE,
+                                           XQUEUE__VOID);
+        
+        XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[0]), 5);
+        XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[1]), 3);
+        XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[2]), 8);
+        XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[3]), 3);
+        XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[4]), 9);
+        REQUIRE(dataQueueBusy->qid == 4);
+        REQUIRE(dataQueueBusy->next->qid == 3);
+        REQUIRE(dataQueueBusy->next->next->qid == 2);
+        REQUIRE(dataQueueBusy->next->next->next->qid == 1);
+        REQUIRE(dataQueueBusy->next->next->next->next->qid == 0);
+        REQUIRE( XQUEUE__GetLevel(&dataQueueFree) == 0 );
+        REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 5 );
+        TESTER_SECTION_E();
+
         TESTER_SECTION_S(XQUEUE: Check the getItem method);
         REQUIRE(*((uint16_t *)XQUEUE__GetItem(dataQueueBusy)) == 0xEEEE);
         REQUIRE(*((uint16_t *)XQUEUE__GetItem(dataQueueBusy->next)) == 0xDDDD);
@@ -246,10 +265,21 @@ TEST_CASE("XQUEUE: FIFO PRIORITY", "[xqueue][fifo]")
         REQUIRE(*((uint16_t *)XQUEUE__GetItem(dataQueueBusy->next->next->next->next)) == 0xAAAA);
         TESTER_SECTION_E();
 
-        TESTER_SECTION_S(XQUEUE: Attempt to add a xqueue instance twice in a queue);
-        TESTER_SECTION_S(XQUEUE: (arg input -> 1110) - Attempt to add duplicate);
-        REQUIRE( XQUEUE__StaticEnqueue(&dataQueueFree, dataQueueFree) == XQUEUE__enRetErrDupEnqueueAttempt );
-        REQUIRE( XQUEUE__GetLevel(&dataQueueFree) == 1 );
+        TESTER_SECTION_S(XQUEUE: Attempt to add a null xqueue instance on queue );
+        REQUIRE( XQUEUE__StaticEnqueue(&dataQueueFree, dataQueueFree) == XQUEUE__enRetFailure );
+        REQUIRE( dataQueueFree == XQUEUE__NULL );
+        REQUIRE( XQUEUE__GetLevel(&dataQueueFree) == 0 );
+        TESTER_SECTION_E();
+
+        TESTER_SECTION_S(XQUEUE: Attempt to add a xqueue instance twice - duplicate);
+        XQUEUE__StaticDeInit(&dataQueueBusy);
+        dataQueueFree = XQUEUE__StaticInit(XQUEUE__enLifo, &(qPool[0]), XQUEUE__SIZE,
+                                           XQUEUE__VOID);
+        
+        XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[0]), 5);
+        REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 1 );
+        REQUIRE( XQUEUE__StaticEnqueue(&dataQueueBusy, dataQueueBusy) == XQUEUE__enRetErrDupEnqueueAttempt );
+        REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 1 );
         TESTER_SECTION_E();
     }
 }

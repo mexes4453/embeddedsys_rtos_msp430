@@ -25,6 +25,7 @@ t_xqueue *XQUEUE__StaticInit(tenXqueueType t, t_xqueue *queue,
         head->content = XQUEUE__VOID;
         head->next = (head + 1);
         head->prev = (head - 1);
+        head->qid = idx;
     }
     /**
      * At this point, the last item in the queue array has its next pointing
@@ -90,12 +91,12 @@ escape:
 tenXqueueRetCode XQUEUE__StaticEnqueue(t_xqueue **q, t_xqueue *item)
 {
     tenXqueueType t;
-    tenXqueueRetCode retCode = XQUEUE__enRetErrFull;
+    tenXqueueRetCode retCode = XQUEUE__enRetFailure;
     unsigned int  level;
     t_xqueue *head;
 
     /* Check that the pointer arguments are valid */
-    if (!q) goto escape;
+    if (!q || !item) goto escape;
 
     head = *q;
     /* Add immediately if the queue is empty */

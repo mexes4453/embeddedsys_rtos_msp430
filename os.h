@@ -1,13 +1,26 @@
+/**
+ * @file os.h
+ * @author Chiemezie Udoh (chiemezieudoh@gmail.com)
+ * @brief 
+ * @version 0.1
+ * @date 2024-05-21
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ * This ScratchOs is a loosely couple operating systems for micro controller.
+ * which employs the use of Active Objects suitable to manage various components
+ * of its operating system. (10 Active objects)
+ */
 
 #ifndef OS_H
 #define OS_H
 #include <stdint.h>
 #include "./xlib/xqueue/xqueue.h"
 
-#define NO_OF_THREADS        10
+#define OS__NO_OF_THREADS        10
 #define NO_OF_CPU_REGS       15
 #define OS__STACK_SIZE       100 /* 100 * 4bytes (32bits)      */
-#define OS__SWITCH_TICK      100 /* context switch every 100ms */
+#define OS__SWITCH_TICK      1 /* context switch every 1ms */
 #define OS__VOID             (void *)0
 
 
@@ -53,6 +66,7 @@ struct s_thread
     uint8_t           period;
     uint8_t           priority;
     f_threadHandler   handler;
+    uint8_t           deadline;
 };
 
 typedef struct 
@@ -80,7 +94,8 @@ extern void ______disableInt(void);
 extern void inline BSP__CriticalStart(void);
 extern void inline BSP__CriticalEnd(void);
 
-void      OS__Init(void);
+void      OS__Init(tenOsSchedPolicy schedPolicy);
+void      OS__LowPoweMode(void);
 void      OS__ThreadInit(t_thread * const me);
 void      OS__Tswitch(void);
 void      OS__Sched(void);
