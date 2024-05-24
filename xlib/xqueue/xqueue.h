@@ -58,9 +58,8 @@ tenXqueueRetCode  XQUEUE__StaticEnqueueNewItem(t_xqueue **rscQueue,
                                                void *item,
                                                unsigned int priority);
 void             *XQUEUE__GetItem(t_xqueue *q);
-char              XQUEUE__FindNode(t_xqueue **q, t_xqueue *n);
-
-
+t_xqueue         *XQUEUE__FindNode(t_xqueue **q, void *item);
+t_xqueue         *XQUEUE__DequeueNode(t_xqueue **q, void *item);
 
 
 

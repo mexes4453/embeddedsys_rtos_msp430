@@ -78,6 +78,11 @@ t_xqueue *XQUEUE__Dequeue(t_xqueue **q)
 
     head = *q;
     *q = head->next; /* update queue head with next item */
+    /* Check that the new head is not null and update its prev link */
+    if ( (*q) != XQUEUE__NULL )
+    {
+        (*q)->prev = XQUEUE__NULL;
+    }
     head->next = XQUEUE__NULL; /* remove link */
     head->prev = XQUEUE__NULL; /* remove link */
 
@@ -270,28 +275,61 @@ escape:
 
 
 
-char  XQUEUE__FindNode(t_xqueue **q, t_xqueue *n)
+t_xqueue  *XQUEUE__FindNode(t_xqueue **q, void *item)
 {
-    t_xqueue *head;
-    char     ret = 0; 
+    t_xqueue *node = XQUEUE__NULL;
 
-    if (!q || !n) goto escape;
-    head = *q;
+    /* Check that the argument pointers are valid */
+    if (!q || !item) goto escape;
+    node = *q;
 
-    if (!head) goto escape;
-    while(head != XQUEUE__NULL)
+    /* Check the head contains a valid node */
+    if (!node) goto escape;
+
+    while(node != XQUEUE__NULL)
     {
-        if ( head == n)
-        {
-            ret = 1;
-            goto escape;
-        }
-        head = head->next;
+        if ( node->content == item ) goto escape;
+        node = node->next;
+    }
+escape:
+    return (node);
+}
+
+#if 1
+t_xqueue  *XQUEUE__DequeueNode(t_xqueue **q, void *item)
+{
+    t_xqueue *node = XQUEUE__NULL;
+
+    if (!q || !item) goto escape;
+
+    /* check if queue is empty */
+    if(!(*q)) goto escape;
+
+    /* Verify that node exist in queue */    
+    node = XQUEUE__FindNode(q, item);    
+    if (!node) goto escape;
+
+    /* head */
+    if ( (node->prev == XQUEUE__NULL) && (node == (*q)) )
+    {
+        node = XQUEUE__Dequeue(q);
+    }
+    else if (node->prev != XQUEUE__NULL && (node->next != XQUEUE__NULL)) /* middle node */
+    {
+        node->prev->next = node->next;
+        node->next->prev = node->prev;
+    }
+    else  /* last node */
+    {
+        node->prev->next = XQUEUE__NULL;
+        node->prev = XQUEUE__NULL;
     }
 
 escape:
-    return (ret);
+   return (node);
 }
+
+#endif
 #if 0
 
 void	XQUEUE__DynAddBack(t_list **lst, t_list *new)

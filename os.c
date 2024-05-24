@@ -20,6 +20,7 @@ static void      OS__LowPowerMode(void)
         while (cnt--){}
         /* flash light */
         led1_toggle();
+        cnt = 10000;
         while (cnt--){}
         led2_toggle();
         /* nothing for cpu to do */
@@ -68,35 +69,19 @@ escape:
 }
 
 
-tenOsRetCode OS__Kill(t_xqueue *n)
+tenOsRetCode OS__Kill(t_thread *t)
 {
     tenOsRetCode retCode = OS__enRetErrKillFailed;
-    t_thread *t = OS__THREAD_NULL;
+    t_xqueue     *n = XQUEUE__NULL;
 
     if (!n) goto escape;
 
-    if ( XQUEUE__FindNode(&OS__threadQueueReady, n) )
+    t->status = OS__enStatusFree;
+    n = XQUEUE__DequeueNode(&OS__threadQueueReady, (void *)t);
+    if (n)
     {
-        t = (t_thread *)(n->content);
-        t->status = OS__enStatusFree;
-
-        /* head */
-        if ( (n->prev == XQUEUE__NULL) && (n== OS__threadQueueReady) )
-        {
-            OS__threadQueueReady = n->next;
-            n->next->prev = n->prev;
-        }
-        else if (n->prev != XQUEUE__NULL && (n->next != XQUEUE__NULL)) /* middle node */
-        {
-            n->prev->next = n->next;
-            n->next->prev = n->prev;
-        }
-        else  /* last node */
-        {
-            n->prev->next = XQUEUE__NULL;
-            n->prev = XQUEUE__NULL;
-        }
-        retCode =  OS__enRetSuccess;
+        XQUEUE__StaticEnqueue(&OS__threadQueueFree, n);
+        retCode = OS__enRetSuccess;
     }
 escape:
     return (retCode);

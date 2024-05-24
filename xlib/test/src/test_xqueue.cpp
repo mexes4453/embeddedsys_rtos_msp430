@@ -276,7 +276,7 @@ TEST_CASE("XQUEUE: FIFO PRIORITY", "[xqueue][fifo]")
         dataQueueFree = XQUEUE__StaticInit(XQUEUE__enLifo, &(qPool[0]), XQUEUE__SIZE,
                                            XQUEUE__VOID);
         
-        XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[0]), 5);
+        XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[0]), 2);
         REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 1 );
         REQUIRE( XQUEUE__StaticEnqueue(&dataQueueBusy, dataQueueBusy) == XQUEUE__enRetErrDupEnqueueAttempt );
         REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 1 );
@@ -284,13 +284,34 @@ TEST_CASE("XQUEUE: FIFO PRIORITY", "[xqueue][fifo]")
 
 
         TESTER_SECTION_S(XQUEUE: Test the findNode method);
-        REQUIRE( XQUEUE__FindNode((t_xqueue **)0, XQUEUE__NULL ) == 0);
-        REQUIRE( XQUEUE__FindNode((t_xqueue **)0, &(qPool[0]) ) == 0);
-        REQUIRE( XQUEUE__FindNode(&dataQueueBusy, XQUEUE__NULL ) == 0);
-        REQUIRE( XQUEUE__FindNode(&dataQueueBusy, &(qPool[0]) ) == 1);
-        REQUIRE( XQUEUE__FindNode(&dataQueueBusy, &(qPool[1]) ) == 0);
-        REQUIRE( XQUEUE__FindNode(&dataQueueFree, &(qPool[1]) ) == 1);
-        REQUIRE( XQUEUE__FindNode(&dataQueueFree, &(qPool[0]) ) == 0);
+        REQUIRE( XQUEUE__FindNode((t_xqueue **)0, XQUEUE__VOID ) == XQUEUE__NULL);
+        REQUIRE( XQUEUE__FindNode((t_xqueue **)0, (void *)&(data[0]) ) == XQUEUE__NULL);
+        REQUIRE( XQUEUE__FindNode(&dataQueueBusy, XQUEUE__VOID ) == XQUEUE__NULL);
+        REQUIRE( XQUEUE__FindNode(&dataQueueBusy, (void *)&(data[0]) ) == &(qPool[0]));
+        REQUIRE( XQUEUE__FindNode(&dataQueueBusy, (void *)&(data[1]) ) == XQUEUE__NULL);
+        REQUIRE( XQUEUE__GetLevel(&dataQueueFree) == 4 );
+        REQUIRE( XQUEUE__FindNode(&dataQueueFree, (void *)&(data[1]) ) == XQUEUE__NULL);
+        XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[1]), 2);
+        REQUIRE( XQUEUE__FindNode(&dataQueueBusy, (void *)&(data[1]) ) == &(qPool[1]));
+        REQUIRE( XQUEUE__FindNode(&dataQueueFree, (void *)&(data[0]) ) == XQUEUE__NULL);
+        REQUIRE( XQUEUE__GetLevel(&dataQueueFree) == 3 );
+        REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 2);
         TESTER_SECTION_E();
+#if 1
+        TESTER_SECTION_S(XQUEUE: DequeueNode );
+        XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[2]), 2);
+        REQUIRE( XQUEUE__GetLevel(&dataQueueFree) == 2 );
+        REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 3);
+        REQUIRE( dataQueueBusy == &(qPool[2]));
+        REQUIRE( dataQueueBusy->next == &(qPool[1]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[0]) ) == &(qPool[0]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[1]) ) == &(qPool[1]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[2]) ) == &(qPool[2]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[2]) ) == XQUEUE__NULL);
+        REQUIRE( XQUEUE__Dequeue(&dataQueueBusy) == XQUEUE__NULL);
+        REQUIRE( XQUEUE__GetLevel(&dataQueueFree) == 2 );
+        REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 0);
+        TESTER_SECTION_E();
+#endif
     }
 }
