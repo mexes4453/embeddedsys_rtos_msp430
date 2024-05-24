@@ -35,3 +35,18 @@ void ______enableInt(void)
         );
 }
 
+
+
+
+void inline BSP__CriticalStart(void)
+{
+    ______disableInt();
+}
+
+
+
+
+void inline BSP__CriticalEnd(void)
+{
+    ______enableInt();
+}

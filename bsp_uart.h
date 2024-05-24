@@ -104,4 +104,3 @@ t_uartBuf *BSP_UART__GetBufAddr(void);
 void BSP_UART__ISR_A0_TX_RX(void);
 
 #endif /* BSP_UART_H */
-
