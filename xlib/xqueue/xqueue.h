@@ -62,17 +62,4 @@ t_xqueue         *XQUEUE__FindNode(t_xqueue **q, void *item);
 t_xqueue         *XQUEUE__DequeueNode(t_xqueue **q, void *item);
 
 
-
-#if 0
-t_xqueue	*XQUEUE__DynCreateNewDyn(tenxqueueType t, void *item);
-void	     XQUEUE__DynAddBack(t_xqueue **lst, t_xqueue *new);
-void         ft_lstadd_front(t_xqueue **lst, t_xqueue *new)
-void         ft_lstclear(t_xqueue **lst, void (*del)(void*))
-void         ft_lstdelone(t_xqueue *lst, void (*del)(void*))
-void         ft_lstiter(t_xqueue *lst, void (*f)(void *))
-t_xqueue	*ft_lstlast(t_xqueue *lst)
-t_xqueue	*ft_lstmap(t_xqueue *lst, void *(*f)(void *), void (*del)(void *))
-
-
-#endif
 #endif /* XQUEUE_H */
