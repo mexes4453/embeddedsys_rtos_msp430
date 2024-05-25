@@ -6,10 +6,8 @@
 # include "led.h"
 # include "os.h"
 # include "bsp_i2c.h"
-
-// t_thread t1;
-// t_thread t2;
-
+# include "app.h"
+# include "utils.h"
 
 #if 0
 void copy_vector(void)
@@ -20,35 +18,8 @@ void copy_vector(void)
 
 #endif
 
-void main_led1(void)
-{
-    /* Red LED */
-    while (1)
-    {
-        led1_toggle();
-        BSP_TIMER__DelayMs(10);
-    }
-}
-
-
-void main_led2(void)
-{
-    /* Green LED */
-    while (1)
-    {
-        led2_toggle();
-        BSP_TIMER__DelayMs(20);
-    }
-}
-
-
-
-
-
-
-unsigned char i2cBuffer[BSP_I2C__BUF_SZ];
+//unsigned char i2cBuffer[BSP_I2C__BUF_SZ];
 tenOsRetCode osRetCode;
-
 
 int main(void)
 {
@@ -59,21 +30,17 @@ int main(void)
 	Init_TestPin();
     BSP_UART__Init();
     BSP_TIMER__TA0_Init( BSP_TIMER__TA0 );
-//    BSP_I2C__Init( BSP_I2C__B0 );
+//  //BSP_I2C__Init( BSP_I2C__B0 );
 
     /* Initialise buffer to zero */
-    unsigned int idx = 0;
-    for (;idx < BSP_I2C__BUF_SZ; idx++ )
-    {
-        i2cBuffer[idx] = 0;
-    }
+    // UTILS__MEMSET(&(i2cBuffer[0]), 0, BSP_I2C__BUF_SZ);
     
     /* Initialise the operating system  */
     OS__Init(OS__enSchedPolicyRoundRobin);
 
     /* Spawn threads */
-    osRetCode = OS__Fork(main_led1, 4, 20);
-    osRetCode = OS__Fork(main_led2, 5, 50);
+    osRetCode = OS__Fork(APP__MainLed1, 4, 20);
+    osRetCode = OS__Fork(APP__MainLed2, 5, 50);
     ______enableInt();
 
 	while (1)

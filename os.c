@@ -6,10 +6,10 @@ static t_thread         OS__threads[OS__NO_OF_THREADS];
 static t_xqueue         OS__threadPool[OS__NO_OF_THREADS];
 static t_xqueue        *OS__threadQueueFree, *OS__threadQueueReady; 
 static t_xqueue        *OS__threadQueueSleep, *OS__threadQueueBlocked;
-static t_thread        *OS__currThread;
-static t_xqueue        *OS__currThreadNode;
+static t_thread        *OS__currThread, *OS__nextThread;
+static t_xqueue        *OS__currThreadNode, *OS__nextThreadNode;
 static tenOsSchedPolicy OS__schedPolicy;
-uint8_t  const               OS__switchPeriod = OS__SWITCH_TICK;
+uint8_t  const          OS__switchPeriod = OS__SWITCH_TICK;
 
 
 static void      OS__LowPowerMode(void)

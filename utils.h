@@ -45,7 +45,7 @@
  * -----------------
  * Only use when enough buffer is provided for addr.
  */
-#define UTILS_MEMSET(addr,value,byteCnt)\
+#define UTILS__MEMSET(addr,value,byteCnt)\
 {\
     if ((addr) != UTILS_NULL)\
     {\
