@@ -1,6 +1,6 @@
 #include "app.h"
 
-void APP__MainLed1(void)
+void APP__TaskLed1(void)
 {
     /* Red LED */
     while (1)
@@ -11,12 +11,12 @@ void APP__MainLed1(void)
 }
 
 
-void APP__MainLed2(void)
+void APP__TaskLed2(void)
 {
     /* Green LED */
     while (1)
     {
         led2_toggle();
-        BSP_TIMER__DelayMs(20);
+        BSP_TIMER__DelayMs(30);
     }
 }

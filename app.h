@@ -5,7 +5,7 @@
 #include "led.h"
 
 
-void APP__MainLed1(void);
-void APP__MainLed2(void);
+void APP__TaskLed1(void);
+void APP__TaskLed2(void);
 
 #endif /* APP_H */

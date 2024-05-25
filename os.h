@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include "./xlib/xqueue/xqueue.h"
 #include "led.h"
+#include "bsp_timer.h"
 
 #define OS__NO_OF_THREADS        10
 #define NO_OF_CPU_REGS       15
@@ -68,6 +69,7 @@ struct s_thread
     uint8_t           priority;
     f_threadHandler   handler;
     uint8_t           deadline;
+    uint8_t           timeout;    /* No of ticks (1ms) */
 };
 
 typedef struct 
@@ -111,6 +113,6 @@ int       OS__V_CountSemaphore(t_osSemaphore *s);
 int       OS__P_BinSemaphore(t_osSemaphore *s);
 int       OS__V_BinSemaphore(t_osSemaphore *s);
 tenOsRetCode OS__Fork(f_threadHandler handler, uint8_t priority, uint8_t period);
-tenOsRetCode OS__Kill(t_xqueue *n);
+tenOsRetCode OS__Kill(t_thread *t);
 
 #endif /* OS_H */

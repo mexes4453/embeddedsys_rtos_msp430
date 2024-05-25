@@ -39,8 +39,8 @@ int main(void)
     OS__Init(OS__enSchedPolicyRoundRobin);
 
     /* Spawn threads */
-    osRetCode = OS__Fork(APP__MainLed1, 4, 20);
-    osRetCode = OS__Fork(APP__MainLed2, 5, 50);
+    osRetCode = OS__Fork(APP__TaskLed1, 4, 20);
+    osRetCode = OS__Fork(APP__TaskLed2, 5, 50);
     ______enableInt();
 
 	while (1)

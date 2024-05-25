@@ -20,18 +20,18 @@ void BSP__ConfigureClock(void)
 void ______disableInt(void)
 {
     __asm__ __volatile__(
-            ";NOP \n\t"          // No operation
-            "BIC.W #0x0008, SR \n\t" // Clear interrupt mask bit
-            "NOP \n\t"          // No operation
+            " NOP \n\t"          // No operation
+            " BIC.W #0x0008, SR \n\t" // Clear interrupt mask bit
+            " NOP \n\t"          // No operation
         );
 }
 
 void ______enableInt(void)
 {
     __asm__ __volatile__(
-            ";NOP \n\t"          // No operation
-            "BIS.W #0x0008, SR \n\t" // Clear interrupt mask bit
-            "NOP \n\t"          // No operation
+            " NOP \n\t"          // No operation
+            " BIS.W #0x0008, SR \n\t" // Clear interrupt mask bit
+            " NOP \n\t"          // No operation
         );
 }
 

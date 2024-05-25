@@ -12,17 +12,16 @@ static tenOsSchedPolicy OS__schedPolicy;
 uint8_t  const          OS__switchPeriod = OS__SWITCH_TICK;
 
 
-static void      OS__LowPowerMode(void)
+static void      OS__TaskIdle(void)
 {
-    int volatile cnt = 10000;
     while (1)
     {
-        while (cnt--){}
-        /* flash light */
+        /* flash lights */
         led1_toggle();
-        cnt = 10000;
-        while (cnt--){}
+        BSP_TIMER__DelayMs(10);
         led2_toggle();
+        BSP_TIMER__DelayMs(10);
+
         /* nothing for cpu to do */
         /* switch to low power mode with interrupt */
     }
@@ -36,7 +35,7 @@ void OS__Init(tenOsSchedPolicy schedPolicy)
                                                                      OS__NO_OF_THREADS,
                                                                      XQUEUE__VOID);
 
-    OS__Fork(OS__LowPowerMode, 0, 1); /* 1Hz */
+    OS__Fork(OS__TaskIdle, 0, 1); /* 1Hz */
 }
 
 
@@ -54,13 +53,13 @@ tenOsRetCode OS__Fork(f_threadHandler handler, uint8_t priority, uint8_t period)
     t->tid = idx;
     t->status = OS__enStatusReady;
     t->period = period;
-    t->priority = priority;
+    t->priority = (OS__schedPolicy == OS__enSchedPolicyRoundRobin) ? 0 : priority;
     t->handler = handler;
     OS__ThreadInit( t );
 
     /* Embed the thread inside the queue node */
     qEntry->content = (void *)t;
-    qEntry->priority = priority;
+    qEntry->priority = t->priority;
     XQUEUE__StaticEnqueue(&OS__threadQueueReady, qEntry);
     retCode = OS__enRetSuccess;
 
@@ -129,7 +128,6 @@ void OS__Sched(void)
          * The low power mode (idle thread) will be scheduled if its 
          * the only thread in the queue.*/
         OS__currThreadNode = OS__threadQueueReady;
-        OS__currThread = (t_thread *)XQUEUE__GetItem(OS__currThreadNode);
     }
     else
     {
@@ -150,10 +148,20 @@ void OS__Sched(void)
                 {
                     OS__currThreadNode = OS__currThreadNode->next;
                 }
-                OS__currThread = (t_thread *)XQUEUE__GetItem(OS__currThreadNode);
             }
         }
     }
+    /**
+     * Attempt to skip the idle thread if there are other threads
+     * in the ready queue.
+     * The idle thread is scheduled only if it's the only thread within
+     * the queue */
+    if ( (XQUEUE__GetLevel(&OS__threadQueueReady) > 1) && 
+         (OS__currThreadNode->qid == 0))
+    {
+        OS__currThreadNode = OS__currThreadNode->next;
+    }
+    OS__currThread = (t_thread *)XQUEUE__GetItem(OS__currThreadNode);
 }
 
 
