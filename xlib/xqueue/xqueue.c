@@ -7,6 +7,7 @@ t_xqueue *XQUEUE__StaticInit(tenXqueueType t, t_xqueue *queue,
                                               void *item)
 {
     t_xqueue     *head = XQUEUE__NULL;
+    t_xqueue     *currNode = XQUEUE__NULL;
     unsigned int idx=0;
 
     /* Check that the pointer arguments are valid */
@@ -14,29 +15,25 @@ t_xqueue *XQUEUE__StaticInit(tenXqueueType t, t_xqueue *queue,
     
     /* Check that nbr of item is greater than 0 */
     if (!queueSize) goto escape;
-
-    /* Initialise all the nodes */
+    head = queue;
+    /* Initialise and link all the nodes */
     for (idx=0; idx < queueSize; idx++)
     {
-        head = queue + (idx);            /* next item in array of queue item */
-        head->capacity = queueSize;
-        head->priority = 0;
-        head->type = t;
-        head->content = XQUEUE__VOID;
-        head->next = (head + 1);
-        head->prev = (head - 1);
-        head->qid = idx;
+        currNode = queue + (idx);            /* next item in array of queue item */
+        currNode->capacity = queueSize;
+        currNode->priority = 0;
+        currNode->type = t;
+        currNode->content = XQUEUE__VOID;
+        currNode->next = (currNode + 1);
+        currNode->prev = (currNode - 1);
+        currNode->qid = idx;
     }
     /**
      * At this point, the last item in the queue array has its next pointing
      * to an location outside the queue array size range.
      * The last item should point to NULL*/
-    head->next = XQUEUE__NULL;
-
-    /**
-     * The head points back to the top the queue and its prev is reset to
-     * NULL.*/
-    head = queue;
+    currNode->next = XQUEUE__NULL;
+    head->tail = currNode;         /* update the tail address on the head node of queue */
     head->prev = XQUEUE__NULL;
 
     /* Load data (item) into the queue head if available */
@@ -72,19 +69,26 @@ escape:
 t_xqueue *XQUEUE__Dequeue(t_xqueue **q)
 {
     t_xqueue *head = XQUEUE__NULL;
+    t_xqueue *tail = XQUEUE__NULL;
 
     /* Check that the pointer arguments are valid */
     if (!q || !(*q)) goto escape;
 
     head = *q;
-    *q = head->next; /* update queue head with next item */
-    /* Check that the new head is not null and update its prev link */
+    tail = head->tail;   /* Retrieve tail addr from queue head */
+
+    *q = head->next;     /* update queue head with next item   */
+    /**
+     * Check that the new head is not null and update its prev link
+     * and queue tail addr */
     if ( (*q) != XQUEUE__NULL )
     {
-        (*q)->prev = XQUEUE__NULL;
+        (*q)->prev = head->prev;
+        (*q)->tail = tail;
     }
     head->next = XQUEUE__NULL; /* remove link */
     head->prev = XQUEUE__NULL; /* remove link */
+    head->tail = XQUEUE__NULL; /* remove link */
 
 escape:
     return (head);
@@ -109,6 +113,8 @@ tenXqueueRetCode XQUEUE__StaticEnqueue(t_xqueue **q, t_xqueue *item)
     {
         *q = item;
         item->next = XQUEUE__NULL;
+        item->prev = XQUEUE__NULL;
+        item->tail = item;
         retCode = XQUEUE__enRetSuccess;
         goto escape;
     }
@@ -136,6 +142,7 @@ tenXqueueRetCode XQUEUE__StaticEnqueue(t_xqueue **q, t_xqueue *item)
         item->prev = XQUEUE__NULL;
         *q = item;           /* Place item on top */
         item->next = head;   /* connect the rest to new item */
+        item->tail = head->tail;
         head->prev = item;
     }
     else /* queue type must be of PRIORITY or FIFO */
@@ -171,35 +178,36 @@ char XQUEUE__IsDuplicate(t_xqueue **q, t_xqueue *item)
 
 void    XQUEUE__EnqueueOnPriority(t_xqueue **q, t_xqueue *item)
 {
-    t_xqueue *head = *q;
 
-    item->next = XQUEUE__NULL;
-    item->prev = XQUEUE__NULL;
+    t_xqueue *head = (*q);  /* retrieve tail node addr */
+    t_xqueue *tail = head->tail;  /* retrieve tail node addr */
+    t_xqueue *currNode = head;
 
     /* Check if the correct spot is at the head */
-    if (item->priority > head->priority)
+    if (item->priority > currNode->priority)
     {
-        item->next = head;
-        item->prev = head->prev;
-        *q = item;
+        item->next = currNode;
+        item->prev = currNode->prev;
+        item->tail = tail;
+        (*q) = item;
         goto escape;
     }
     /* Find the right spot within the list of nodes */
-    while ( head != XQUEUE__NULL )
+    while ( (currNode != XQUEUE__NULL) && (currNode != tail) )
     {
-        if ( item->priority > head->priority )
+        if ( item->priority > currNode->priority )
         {
-            item->next = head;
-            item->prev = head->prev;
+            item->next = currNode;
+            item->prev = currNode->prev;
             goto escape;
         }
-        /* make a sneak peek to see if head is last item in queue */
-        if (head->next == XQUEUE__NULL) break ;
-        head = head->next;
+        currNode = currNode->next;
     }
     /* last item in the list - New item takes last position */
-    head->next = item;
-    item->prev = head;
+    item->next = currNode->next;
+    currNode->next = item;
+    item->prev = currNode;
+    (*q)->tail = item; /* Update the tail addr on queue head */
 
 escape:
     return ;
@@ -223,7 +231,9 @@ void             XQUEUE__StaticDeInit(t_xqueue **q)
         next = head->next;
         head->next = XQUEUE__NULL;
         head->prev = XQUEUE__NULL;
+        head->tail = XQUEUE__NULL;
         head->content = XQUEUE__VOID;
+        head->priority = 0;
         head = next;
    }
    *q = head;
@@ -295,35 +305,44 @@ escape:
     return (node);
 }
 
+
+
+
 t_xqueue  *XQUEUE__DequeueNode(t_xqueue **q, void *item)
 {
     t_xqueue *node = XQUEUE__NULL;
+    t_xqueue *tail = XQUEUE__NULL;
 
     if (!q || !item) goto escape;
 
     /* check if queue is empty */
     if(!(*q)) goto escape;
 
+    /* Retrieve tail addr from queue head */
+    tail = (*q)->tail;
+
     /* Verify that node exist in queue */    
     node = XQUEUE__FindNode(q, item);    
     if (!node) goto escape;
 
     /* head */
-    if ( (node->prev == XQUEUE__NULL) && (node == (*q)) )
+    if ( (node == (*q)) )
     {
         node = XQUEUE__Dequeue(q);
     }
-    else if (node->prev != XQUEUE__NULL && (node->next != XQUEUE__NULL)) /* middle node */
+    else if ( node == tail ) /* last node */
+    {
+        (*q)->tail = node->prev;   /* update the tail addr of queue to prev */
+        node->prev->next = node->next; /* rebuild link between prev and next */
+    }
+    else /* node must be in the middle node - simply rebuild link */
     {
         node->prev->next = node->next;
         node->next->prev = node->prev;
     }
-    else  /* last node */
-    {
-        node->prev->next = XQUEUE__NULL;
-        node->prev = XQUEUE__NULL;
-    }
-
+    /* remove links */
+    node->prev = XQUEUE__NULL;
+    node->next = XQUEUE__NULL;
 escape:
    return (node);
 }

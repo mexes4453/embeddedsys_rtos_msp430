@@ -62,6 +62,7 @@ TEST_CASE("XQUEUE: FIFO PRIORITY", "[xqueue][fifo]")
                                            XQUEUE__SIZE,
                                            XQUEUE__VOID);
         REQUIRE(dataQueueFree != XQUEUE__NULL);
+        REQUIRE(dataQueueFree->tail == &(qPool[XQUEUE__SIZE-1]));
         XQUEUE__StaticDeInit(&dataQueueFree);
 
         dataQueueFree = XQUEUE__StaticInit(XQUEUE__enPriorityFifo,            /* 111 */
@@ -69,6 +70,7 @@ TEST_CASE("XQUEUE: FIFO PRIORITY", "[xqueue][fifo]")
                                            XQUEUE__SIZE,
                                            (void *)&data[0]);
         REQUIRE(dataQueueFree != XQUEUE__NULL);
+        REQUIRE(dataQueueFree->tail == &(qPool[XQUEUE__SIZE-1]));
         XQUEUE__StaticDeInit(&dataQueueFree);
     }
 
@@ -80,6 +82,7 @@ TEST_CASE("XQUEUE: FIFO PRIORITY", "[xqueue][fifo]")
         //t_xqueue *dataQueueBusy = XQUEUE__NULL;
         dataQueueFree = XQUEUE__StaticInit(XQUEUE__enPriorityFifo, &(qPool[0]), 5, XQUEUE__VOID);
 
+        REQUIRE(dataQueueFree->tail == &(qPool[XQUEUE__SIZE-1]));
         REQUIRE(dataQueueFree->capacity == 5);
         REQUIRE(dataQueueFree->content == XQUEUE__VOID);
         REQUIRE(dataQueueFree->prev == XQUEUE__NULL);
@@ -87,7 +90,7 @@ TEST_CASE("XQUEUE: FIFO PRIORITY", "[xqueue][fifo]")
         REQUIRE(dataQueueFree->next->next != XQUEUE__NULL);
         REQUIRE(dataQueueFree->next->next->next != XQUEUE__NULL);
         REQUIRE(dataQueueFree->next->next->next->next != XQUEUE__NULL);
-        REQUIRE_FALSE(dataQueueFree->next->next->next->next->next != XQUEUE__NULL);
+        REQUIRE(dataQueueFree->next->next->next->next->next == XQUEUE__NULL);
 
         /* GET LEVEL */
         TESTER_SECTION_S(XQUEUE: (arg input -> 110 - GetLevel));
@@ -103,6 +106,7 @@ TEST_CASE("XQUEUE: FIFO PRIORITY", "[xqueue][fifo]")
         //t_xqueue *dataQueueBusy = XQUEUE__NULL;
         dataQueueFree = XQUEUE__StaticInit(XQUEUE__enPriorityFifo, &(qPool[0]), 5, &(data[0]));
 
+        REQUIRE(dataQueueFree->tail == &(qPool[XQUEUE__SIZE-1]));
         REQUIRE(dataQueueFree->capacity == 5);
         REQUIRE(dataQueueFree->content == &(data[0]));
         REQUIRE(dataQueueFree->prev == XQUEUE__NULL);
@@ -128,19 +132,25 @@ TEST_CASE("XQUEUE: FIFO PRIORITY", "[xqueue][fifo]")
         t_xqueue *dataQueueBusy = XQUEUE__NULL;
 
         dataQueueFree = XQUEUE__StaticInit(XQUEUE__enPriorityFifo, &(qPool[0]), 5, XQUEUE__VOID);
+        REQUIRE(dataQueueFree->tail == &(qPool[XQUEUE__SIZE-1]));
         XQUEUE__StaticEnqueue(&dataQueueBusy, XQUEUE__Dequeue(&dataQueueFree));
+        REQUIRE(dataQueueBusy->tail == &(qPool[0]));
         REQUIRE( XQUEUE__GetLevel(&dataQueueFree) == 4 );
         REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 1 );
         XQUEUE__StaticEnqueue(&dataQueueBusy, XQUEUE__Dequeue(&dataQueueFree));
+        REQUIRE(dataQueueBusy->tail == &(qPool[1]));
         REQUIRE( XQUEUE__GetLevel(&dataQueueFree) == 3 );
         REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 2 );
         XQUEUE__StaticEnqueue(&dataQueueBusy, XQUEUE__Dequeue(&dataQueueFree));
+        REQUIRE(dataQueueBusy->tail == &(qPool[2]));
         REQUIRE( XQUEUE__GetLevel(&dataQueueFree) == 2 );
         REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 3 );
         XQUEUE__StaticEnqueue(&dataQueueBusy, XQUEUE__Dequeue(&dataQueueFree));
+        REQUIRE(dataQueueBusy->tail == &(qPool[3]));
         REQUIRE( XQUEUE__GetLevel(&dataQueueFree) == 1 );
         REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 4 );
         XQUEUE__StaticEnqueue(&dataQueueBusy, XQUEUE__Dequeue(&dataQueueFree));
+        REQUIRE(dataQueueBusy->tail == &(qPool[4]));
         REQUIRE( XQUEUE__GetLevel(&dataQueueFree) == 0 );
         REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 5 );
     }
@@ -277,6 +287,7 @@ TEST_CASE("XQUEUE: FIFO PRIORITY", "[xqueue][fifo]")
                                            XQUEUE__VOID);
         
         XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[0]), 2);
+        REQUIRE( dataQueueBusy->tail == &(qPool[0]));
         REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 1 );
         REQUIRE( XQUEUE__StaticEnqueue(&dataQueueBusy, dataQueueBusy) == XQUEUE__enRetErrDupEnqueueAttempt );
         REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 1 );
@@ -292,13 +303,14 @@ TEST_CASE("XQUEUE: FIFO PRIORITY", "[xqueue][fifo]")
         REQUIRE( XQUEUE__GetLevel(&dataQueueFree) == 4 );
         REQUIRE( XQUEUE__FindNode(&dataQueueFree, (void *)&(data[1]) ) == XQUEUE__NULL);
         XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[1]), 2);
+        REQUIRE( dataQueueBusy->tail == &(qPool[0]));
         REQUIRE( XQUEUE__FindNode(&dataQueueBusy, (void *)&(data[1]) ) == &(qPool[1]));
         REQUIRE( XQUEUE__FindNode(&dataQueueFree, (void *)&(data[0]) ) == XQUEUE__NULL);
         REQUIRE( XQUEUE__GetLevel(&dataQueueFree) == 3 );
         REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 2);
         TESTER_SECTION_E();
 #if 1
-        TESTER_SECTION_S(XQUEUE: DequeueNode );
+        TESTER_SECTION_S(XQUEUE: DequeueNode  );
         XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[2]), 2);
         REQUIRE( XQUEUE__GetLevel(&dataQueueFree) == 2 );
         REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 3);
@@ -313,5 +325,57 @@ TEST_CASE("XQUEUE: FIFO PRIORITY", "[xqueue][fifo]")
         REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 0);
         TESTER_SECTION_E();
 #endif
+        TESTER_SECTION_S(XQUEUE: DequeueNode - HEAD );
+        XQUEUE__StaticDeInit(&dataQueueBusy);
+        dataQueueFree = XQUEUE__StaticInit(XQUEUE__enPriorityFifo, &(qPool[0]), XQUEUE__SIZE,
+                                           XQUEUE__VOID);
+        XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[0]), 2);
+        XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[1]), 2);
+        XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[2]), 2);
+        XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[3]), 2);
+        XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[4]), 2);
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[0]) ) == &(qPool[0]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[0]) ) == XQUEUE__NULL);
+        REQUIRE( dataQueueBusy->tail == &(qPool[4]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[1]) ) == &(qPool[1]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[1]) ) == XQUEUE__NULL);
+        REQUIRE( dataQueueBusy->tail == &(qPool[4]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[2]) ) == &(qPool[2]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[2]) ) == XQUEUE__NULL);
+        REQUIRE( dataQueueBusy->tail == &(qPool[4]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[3]) ) == &(qPool[3]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[3]) ) == XQUEUE__NULL);
+        REQUIRE( dataQueueBusy->tail == &(qPool[4]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[4]) ) == &(qPool[4]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[4]) ) == XQUEUE__NULL);
+        REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 0);
+        REQUIRE( XQUEUE__Dequeue(&dataQueueBusy) == XQUEUE__NULL);
+        TESTER_SECTION_E();
+        TESTER_SECTION_S(XQUEUE: DequeueNode - TAIL );
+        XQUEUE__StaticDeInit(&dataQueueBusy);
+        dataQueueFree = XQUEUE__StaticInit(XQUEUE__enPriorityFifo, &(qPool[0]), XQUEUE__SIZE,
+                                           XQUEUE__VOID);
+        XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[0]), 2);
+        XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[1]), 2);
+        XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[2]), 2);
+        XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[3]), 2);
+        XQUEUE__StaticEnqueueNewItem(&dataQueueFree, &dataQueueBusy, &(data[4]), 2);
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[4]) ) == &(qPool[4]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[4]) ) == XQUEUE__NULL);
+        REQUIRE( dataQueueBusy->tail == &(qPool[3]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[3]) ) == &(qPool[3]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[3]) ) == XQUEUE__NULL);
+        REQUIRE( dataQueueBusy->tail == &(qPool[2]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[2]) ) == &(qPool[2]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[2]) ) == XQUEUE__NULL);
+        REQUIRE( dataQueueBusy->tail == &(qPool[1]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[1]) ) == &(qPool[1]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[1]) ) == XQUEUE__NULL);
+        REQUIRE( dataQueueBusy->tail == &(qPool[0]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[0]) ) == &(qPool[0]));
+        REQUIRE( XQUEUE__DequeueNode(&dataQueueBusy, (void *)&(data[0]) ) == XQUEUE__NULL);
+        REQUIRE( XQUEUE__GetLevel(&dataQueueBusy) == 0);
+        REQUIRE( XQUEUE__Dequeue(&dataQueueBusy) == XQUEUE__NULL);
+        TESTER_SECTION_E();
     }
 }

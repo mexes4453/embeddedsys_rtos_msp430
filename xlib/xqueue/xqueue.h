@@ -24,6 +24,7 @@ struct s_xqueue
     unsigned int    capacity;
 	t_xqueue        *next;
 	t_xqueue        *prev;
+	t_xqueue        *tail;
     unsigned char   qid;
 };
 
