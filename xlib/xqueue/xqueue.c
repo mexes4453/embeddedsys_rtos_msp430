@@ -49,16 +49,21 @@ unsigned int XQUEUE__GetLevel(t_xqueue **q)
 {
     unsigned int entryCnt = 0;
     t_xqueue     *head = XQUEUE__NULL;
+    t_xqueue     *tail = XQUEUE__NULL;
 
     /* Check that the pointer arguments are valid */
     if (!q) goto escape;
 
     head = *q;
-    while (head != XQUEUE__NULL)
+    if (!head) goto escape;
+    tail = head->tail;
+
+    while (head != tail)
     {
         entryCnt++;
         head = head->next;
     }
+    entryCnt++; /* add the tail */
 escape:
     return (entryCnt);
 }
@@ -75,6 +80,14 @@ t_xqueue *XQUEUE__Dequeue(t_xqueue **q)
     if (!q || !(*q)) goto escape;
 
     head = *q;
+
+    /* Check if it is the only node remaining in the queue */
+    if ( XQUEUE__GetLevel(q) == 1)
+    {
+       (*q) = XQUEUE__NULL;
+       goto removeLinks;
+    }
+
     tail = head->tail;   /* Retrieve tail addr from queue head */
 
     *q = head->next;     /* update queue head with next item   */
@@ -86,6 +99,7 @@ t_xqueue *XQUEUE__Dequeue(t_xqueue **q)
         (*q)->prev = head->prev;
         (*q)->tail = tail;
     }
+removeLinks:
     head->next = XQUEUE__NULL; /* remove link */
     head->prev = XQUEUE__NULL; /* remove link */
     head->tail = XQUEUE__NULL; /* remove link */
@@ -289,25 +303,40 @@ t_xqueue  *XQUEUE__FindNode(t_xqueue **q, void *item)
 {
     t_xqueue *node = XQUEUE__NULL;
 
+
     /* Check that the argument pointers are valid */
     if (!q || !item) goto escape;
+
+    if (XQUEUE__GetLevel(q) == 0) goto escape;
     node = *q;
 
     /* Check the head contains a valid node */
     if (!node) goto escape;
 
-    while(node != XQUEUE__NULL)
+    /* check if item is tail */
+    if ( node->tail->content == item )
+    {
+        node = node->tail;
+        goto escape;
+    }
+
+    /* check from head until tail */
+    while(node != (*q)->tail)
     {
         if ( node->content == item ) goto escape;
         node = node->next;
     }
+    node = XQUEUE__NULL;
 escape:
     return (node);
 }
 
 
 
-
+/**
+ * Do not use this function for LIFO queue type - it will return null 
+ * Instead use the XQUEUE__Dequeue which is more suitable for LIFO Queue
+ * */
 t_xqueue  *XQUEUE__DequeueNode(t_xqueue **q, void *item)
 {
     t_xqueue *node = XQUEUE__NULL;
@@ -318,12 +347,21 @@ t_xqueue  *XQUEUE__DequeueNode(t_xqueue **q, void *item)
     /* check if queue is empty */
     if(!(*q)) goto escape;
 
+    if ( (*q)->type == XQUEUE__enLifo ) goto escape;
+
     /* Retrieve tail addr from queue head */
     tail = (*q)->tail;
 
     /* Verify that node exist in queue */    
     node = XQUEUE__FindNode(q, item);    
     if (!node) goto escape;
+
+    /* Check if it is the only node remaining in the queue */
+    if ( XQUEUE__GetLevel(q) == 1)
+    {
+       (*q) = XQUEUE__NULL;
+       goto removeLinks;
+    }
 
     /* head */
     if ( (node == (*q)) )
@@ -332,14 +370,15 @@ t_xqueue  *XQUEUE__DequeueNode(t_xqueue **q, void *item)
     }
     else if ( node == tail ) /* last node */
     {
-        (*q)->tail = node->prev;   /* update the tail addr of queue to prev */
-        node->prev->next = node->next; /* rebuild link between prev and next */
+        (*q)->tail = node->prev;       /* update the tail addr of queue to prev */
+        node->prev->next = node->next; /* rebuild link between prev and next    */
     }
     else /* node must be in the middle node - simply rebuild link */
     {
         node->prev->next = node->next;
         node->next->prev = node->prev;
     }
+removeLinks:
     /* remove links */
     node->prev = XQUEUE__NULL;
     node->next = XQUEUE__NULL;
