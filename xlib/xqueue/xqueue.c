@@ -175,8 +175,15 @@ char XQUEUE__IsDuplicate(t_xqueue **q, t_xqueue *item)
     t_xqueue *head = *q;
     char      retCode= 0;
     
+    /* check item node with tail */
+    if (item == (*q)->tail)
+    {
+        retCode =  1;
+        goto escape;
+    }
 
-    while (head != XQUEUE__NULL)
+    /* Check item with head until the tail */
+    while (head != (*q)->tail)
     {
         if ( head == item )
         {
@@ -185,6 +192,7 @@ char XQUEUE__IsDuplicate(t_xqueue **q, t_xqueue *item)
         }
         head = head->next;
     }
+escape:
     return (retCode);
 }
 

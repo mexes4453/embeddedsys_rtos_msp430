@@ -5,9 +5,9 @@
 static t_thread         OS__threads[OS__NO_OF_THREADS];
 static t_xqueue         OS__threadPool[OS__NO_OF_THREADS];
 static t_xqueue        *OS__threadQueueFree, *OS__threadQueueReady; 
-static t_xqueue        *OS__threadQueueSleep, *OS__threadQueueBlocked;
-static t_thread        *OS__currThread, *OS__nextThread;
-static t_xqueue        *OS__currThreadNode, *OS__nextThreadNode;
+t_xqueue        *OS__threadQueueSleep, *OS__threadQueueBlocked;
+t_thread        *OS__currThread = OS__THREAD_NULL, *OS__nextThread = OS__THREAD_NULL;
+t_xqueue        *OS__currThreadNode=XQUEUE__NULL, *OS__nextThreadNode=XQUEUE__NULL;
 static tenOsSchedPolicy OS__schedPolicy;
 uint8_t  const          OS__switchPeriod = OS__SWITCH_TICK;
 
@@ -36,6 +36,10 @@ void OS__Init(tenOsSchedPolicy schedPolicy)
                                                                      XQUEUE__VOID);
 
     OS__Fork(OS__TaskIdle, 0, 1); /* 1Hz */
+
+    /* Convert the threadQueueReady to circular queue  */
+    OS__threadQueueReady->prev = OS__threadQueueReady->tail;
+    OS__threadQueueReady->tail->next = OS__threadQueueReady;
 }
 
 
@@ -72,8 +76,6 @@ tenOsRetCode OS__Kill(t_thread *t)
 {
     tenOsRetCode retCode = OS__enRetErrKillFailed;
     t_xqueue     *n = XQUEUE__NULL;
-
-    if (!n) goto escape;
 
     t->status = OS__enStatusFree;
     n = XQUEUE__DequeueNode(&OS__threadQueueReady, (void *)t);
@@ -131,6 +133,7 @@ void OS__Sched(void)
     }
     else
     {
+        if ()
         /**
          * Subsequent context/TaskSwitch will take this path and will be
          * performed based on the initiated scheduling policy.  */
@@ -140,14 +143,7 @@ void OS__Sched(void)
             case OS__enSchedPolicyPriority:
             default: /* Roundrobin */
             {
-                if (OS__currThreadNode->next == XQUEUE__NULL)
-                {
-                    OS__currThreadNode = OS__threadQueueReady;
-                }
-                else
-                {
-                    OS__currThreadNode = OS__currThreadNode->next;
-                }
+                OS__currThreadNode = OS__currThreadNode->next;
             }
         }
     }
@@ -169,20 +165,18 @@ void OS__Tswitch(void)
 {
     ______disableInt();
 
-    {
         
-        if ( OS__currThread != (t_thread *)0)
-        {
-            /**
-             * Save the context of the current thread onto its private stack.
-             * prior to scheduling of the next thread/process */
-            __asm(
-                  " PUSHM.A PC                \n\t"  /* store the next instruction on stack       */
-                  " PUSHM.A #12, r15          \n\t"  /* push multiple registers (R4-R15) to stack */
-                  " MOVA &OS__currThread, R12 \n\t"  /* R12 = &currThread = currThread->sp        */
-                  " MOVA SP, 0x0(R12)         \n\t"  /* COPY the curr sp to the currThread->sp    */
-                  );
-        }
+    if ( OS__currThread != (t_thread *)0)
+    {
+        /**
+         * Save the context of the current thread onto its private stack.
+         * prior to scheduling of the next thread/process */
+        __asm(
+              " PUSHM.A PC                \n\t"  /* store the next instruction on stack       */
+              " PUSHM.A #12, r15          \n\t"  /* push multiple registers (R4-R15) to stack */
+              " MOVA &OS__currThread, R12 \n\t"  /* R12 = &currThread = currThread->sp        */
+              " MOVA SP, 0x0(R12)         \n\t"  /* COPY the curr sp to the currThread->sp    */
+              );
     }
 
     /* Schedule the next thread/process to run on the CPU - Processor */
