@@ -19,10 +19,10 @@
 #include "led.h"
 #include "bsp_timer.h"
 
-#define OS__NO_OF_THREADS        10
+#define OS__NO_OF_THREADS    10
 #define NO_OF_CPU_REGS       15
 #define OS__STACK_SIZE       100 /* 100 * 4bytes (32bits)      */
-#define OS__SWITCH_TICK      1000 /* context switch every 1ms */
+#define OS__SWITCH_TICK      10 /* context switch every 1ms */
 #define OS__VOID             (void *)0
 
 
@@ -82,6 +82,7 @@ typedef struct
 typedef enum e_osRetCode
 {
     OS__enRetSuccess = 0,
+    OS__enRetFailure,
     OS__enRetErrForkFailed,
     OS__enRetErrKillFailed,
 } tenOsRetCode;
@@ -114,5 +115,7 @@ int       OS__P_BinSemaphore(t_osSemaphore *s);
 int       OS__V_BinSemaphore(t_osSemaphore *s);
 tenOsRetCode OS__Fork(f_threadHandler handler, uint8_t priority, uint8_t period);
 tenOsRetCode OS__Kill(t_thread *t);
+tenOsRetCode OS__SetStatus(t_thread *t, tenOsThreadStatus stat);
+t_thread     *OS__GetCurrThread(void);
 
 #endif /* OS_H */

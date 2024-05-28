@@ -5,11 +5,11 @@
 static t_thread         OS__threads[OS__NO_OF_THREADS];
 static t_xqueue         OS__threadPool[OS__NO_OF_THREADS];
 static t_xqueue        *OS__threadQueueFree, *OS__threadQueueReady; 
-t_xqueue        *OS__threadQueueSleep, *OS__threadQueueBlocked;
-t_thread        *OS__currThread = OS__THREAD_NULL, *OS__nextThread = OS__THREAD_NULL;
-t_xqueue        *OS__currThreadNode=XQUEUE__NULL, *OS__nextThreadNode=XQUEUE__NULL;
+t_xqueue               *OS__threadQueueSleep, *OS__threadQueueBlocked;
+static t_thread        *OS__currThread = OS__THREAD_NULL;
+t_xqueue               *OS__currThreadNode=XQUEUE__NULL, *OS__nextThreadNode=XQUEUE__NULL;
 static tenOsSchedPolicy OS__schedPolicy;
-uint8_t  const          OS__switchPeriod = OS__SWITCH_TICK;
+uint32_t                OS__switchPeriod = OS__SWITCH_TICK;
 
 
 static void      OS__TaskIdle(void)
@@ -18,9 +18,9 @@ static void      OS__TaskIdle(void)
     {
         /* flash lights */
         led1_toggle();
-        BSP_TIMER__DelayMs(10);
+        BSP_TIMER__DelayMs(1000);
         led2_toggle();
-        BSP_TIMER__DelayMs(10);
+        BSP_TIMER__DelayMs(1000);
 
         /* nothing for cpu to do */
         /* switch to low power mode with interrupt */
@@ -34,10 +34,16 @@ void OS__Init(tenOsSchedPolicy schedPolicy)
     OS__threadQueueFree = XQUEUE__StaticInit(XQUEUE__enPriorityFifo, &(OS__threadPool[0]),
                                                                      OS__NO_OF_THREADS,
                                                                      XQUEUE__VOID);
-
     OS__Fork(OS__TaskIdle, 0, 1); /* 1Hz */
 
-    /* Convert the threadQueueReady to circular queue  */
+    /**
+     * One valid thread is available in ready queue, therefore 
+     * it will be schedule as next thread to run.
+     * The OS_Sched will skip this thread node if there are non-idle threads
+     * in the queue which are ready to run.  */
+    OS__nextThreadNode = OS__threadQueueReady;
+
+    /* Convert the threadQueueReady to circular queue by linking the tail to head  */
     OS__threadQueueReady->prev = OS__threadQueueReady->tail;
     OS__threadQueueReady->tail->next = OS__threadQueueReady;
 }
@@ -72,10 +78,34 @@ escape:
 }
 
 
+t_thread *OS__GetCurrThread(void)
+{
+    return (OS__currThread);
+}
+
+
+
+tenOsRetCode      OS__SetStatus(t_thread *t, tenOsThreadStatus stat)
+{
+    tenOsRetCode retCode = OS__enRetFailure;
+
+    if (!t) goto escape;
+
+    t->status = stat;
+    retCode = OS__enRetSuccess;
+
+escape:
+    return (retCode);
+}
+
+
+
 tenOsRetCode OS__Kill(t_thread *t)
 {
     tenOsRetCode retCode = OS__enRetErrKillFailed;
     t_xqueue     *n = XQUEUE__NULL;
+
+    if (!t) goto escape;
 
     t->status = OS__enStatusFree;
     n = XQUEUE__DequeueNode(&OS__threadQueueReady, (void *)t);
@@ -86,7 +116,6 @@ tenOsRetCode OS__Kill(t_thread *t)
     }
 escape:
     return (retCode);
-
 }
 
 
@@ -122,28 +151,35 @@ void OS__ThreadInit(t_thread * const me)
 
 void OS__Sched(void)
 {
-    if (OS__currThread == OS__THREAD_NULL)
+
+    if (OS__currThreadNode != OS__nextThreadNode)
     {
         /**
          * This path will be taken during the start of the OS and 
          * It will schedule the thread at the top of the ready queue.
          * The low power mode (idle thread) will be scheduled if its 
          * the only thread in the queue.*/
-        OS__currThreadNode = OS__threadQueueReady;
+        /**
+         * This path will also be taken when a thread willing relinguish
+         * the CPU and schedules the next thread.  */
+        //OS__currThreadNode = OS__nextThreadNode;
     }
     else
     {
-        if ()
         /**
          * Subsequent context/TaskSwitch will take this path and will be
-         * performed based on the initiated scheduling policy.  */
+         * performed based on the initiated scheduling policy which simply
+         * selects the next node in the queue.  */
+        /** 
+         * This also means that no other thread relinguish the CPU willingly.
+        */
         switch (OS__schedPolicy)
         {
             case OS__enSchedPolicyEDF:
             case OS__enSchedPolicyPriority:
             default: /* Roundrobin */
             {
-                OS__currThreadNode = OS__currThreadNode->next;
+                OS__nextThreadNode = OS__nextThreadNode->next;
             }
         }
     }
@@ -152,12 +188,17 @@ void OS__Sched(void)
      * in the ready queue.
      * The idle thread is scheduled only if it's the only thread within
      * the queue */
-    if ( (XQUEUE__GetLevel(&OS__threadQueueReady) > 1) && 
-         (OS__currThreadNode->qid == 0))
+    if ((OS__nextThreadNode->qid == 0) ) 
     {
-        OS__currThreadNode = OS__currThreadNode->next;
+        if ( XQUEUE__GetLevel(&OS__threadQueueReady) == 2 &&
+           (((t_thread *)(OS__nextThreadNode->next->content))->status != OS__enStatusReady)
+        )
+        { /* schedule idle thread */}
+        else 
+        {
+            OS__nextThreadNode = OS__nextThreadNode->next;
+        }
     }
-    OS__currThread = (t_thread *)XQUEUE__GetItem(OS__currThreadNode);
 }
 
 
@@ -165,7 +206,7 @@ void OS__Tswitch(void)
 {
     ______disableInt();
 
-        
+    
     if ( OS__currThread != (t_thread *)0)
     {
         /**
@@ -181,6 +222,9 @@ void OS__Tswitch(void)
 
     /* Schedule the next thread/process to run on the CPU - Processor */
     OS__Sched(); 
+    OS__currThreadNode = OS__nextThreadNode;
+    OS__currThread = (t_thread *)(OS__currThreadNode->content);
+    OS__switchPeriod = OS__SWITCH_TICK;
     
     /* Restore the context of newly scheduled thread from its private stack */
     __asm(
@@ -189,7 +233,7 @@ void OS__Tswitch(void)
           " POPM.A #12, r15           \n\t"  /* pop multiple registers (R4-R15) as address off */
                                              /* the current thread/process stack */
          );
-
+    
     ______enableInt();
 
     /* Return and pop the PC off the stack of current thread/process */
