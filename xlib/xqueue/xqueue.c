@@ -37,6 +37,8 @@ t_xqueue *XQUEUE__StaticInit(tenXqueueType t, t_xqueue *queue,
     head->prev = XQUEUE__NULL;
 
     /* Load data (item) into the queue head if available */
+    /* This can occur during the queue initialisation user could
+     * provide null value if valid item is not provided */
     head->content = (item ? item : XQUEUE__VOID);
 escape:
     return (head);

@@ -115,7 +115,7 @@ int       OS__P_BinSemaphore(t_osSemaphore *s);
 int       OS__V_BinSemaphore(t_osSemaphore *s);
 tenOsRetCode OS__Fork(f_threadHandler handler, uint8_t priority, uint8_t period);
 tenOsRetCode OS__Kill(t_thread *t);
-tenOsRetCode OS__SetStatus(t_thread *t, tenOsThreadStatus stat);
+tenOsRetCode OS__SetThreadStatus(t_thread *t, tenOsThreadStatus status);
 t_thread     *OS__GetCurrThread(void);
 
 #endif /* OS_H */

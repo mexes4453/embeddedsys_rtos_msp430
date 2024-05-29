@@ -2,13 +2,14 @@
 
 
 
+static tenOsSchedPolicy OS__schedPolicy;
 static t_thread         OS__threads[OS__NO_OF_THREADS];
 static t_xqueue         OS__threadPool[OS__NO_OF_THREADS];
 static t_xqueue        *OS__threadQueueFree, *OS__threadQueueReady; 
-t_xqueue               *OS__threadQueueSleep, *OS__threadQueueBlocked;
 static t_thread        *OS__currThread = OS__THREAD_NULL;
-t_xqueue               *OS__currThreadNode=XQUEUE__NULL, *OS__nextThreadNode=XQUEUE__NULL;
-static tenOsSchedPolicy OS__schedPolicy;
+t_xqueue               *OS__threadQueueSleep, *OS__threadQueueBlocked;
+t_xqueue               *OS__currThreadNode=XQUEUE__NULL;
+t_xqueue               *OS__nextThreadNode=XQUEUE__NULL;
 uint32_t                OS__switchPeriod = OS__SWITCH_TICK;
 
 
@@ -85,13 +86,13 @@ t_thread *OS__GetCurrThread(void)
 
 
 
-tenOsRetCode      OS__SetStatus(t_thread *t, tenOsThreadStatus stat)
+tenOsRetCode      OS__SetThreadStatus(t_thread *t, tenOsThreadStatus status)
 {
     tenOsRetCode retCode = OS__enRetFailure;
 
     if (!t) goto escape;
 
-    t->status = stat;
+    t->status = status;
     retCode = OS__enRetSuccess;
 
 escape:
