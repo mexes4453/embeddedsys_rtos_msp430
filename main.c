@@ -4,10 +4,13 @@
 # include "bsp_timer.h"
 # include "serial.h"
 # include "led.h"
-# include "os.h"
 # include "bsp_i2c.h"
 # include "app.h"
 # include "utils.h"
+
+#if defined (OS)    
+# include "os.h"
+#endif /* OS  */
 
 #if 0
 void copy_vector(void)
@@ -34,13 +37,14 @@ int main(void)
 
     /* Initialise buffer to zero */
     // UTILS__MEMSET(&(i2cBuffer[0]), 0, BSP_I2C__BUF_SZ);
-    
+#if defined (OS)    
     /* Initialise the operating system  */
     OS__Init(OS__enSchedPolicyRoundRobin);
 
     /* Spawn threads */
     osRetCode = OS__Fork(APP__TaskLed1, 4, 20);
     osRetCode = OS__Fork(APP__TaskLed2, 5, 50);
+#endif /* OS  */
     ______enableInt();
 
 	while (1)
@@ -54,6 +58,10 @@ int main(void)
 		//led2_toggle();
         //BSP_TIMER__DelayMs(500);
 		//TestPin_toggle();
+#if 1
+        SERIAL__PRINTF_1(SERIAL__enTxtColorMagenta, "Hello %d World\n", 2);
+        SERIAL__PRINTF_0("Goodbye %d %d World\n", 2, 3);
+#endif 
 #if 0
         SERIAL__Printf(SERIAL__enTxtColorRed, "Hello World - UART \n");
 		SERIAL__Printf(SERIAL__enTxtColorMagenta, "Hello World - SERIAL: %%; nbr: %d; char: %c; -ve: %d; \n", 3752, 'b', -3752);

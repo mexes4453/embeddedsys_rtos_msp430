@@ -7,9 +7,9 @@
  * 
  * @copyright Copyright (c) 2024
  * 
- * This ScratchOs is a loosely couple operating systems for micro controller.
+ * This ScratchOs is a loosely coupled operating systems for micro controller.
  * which employs the use of Active Objects suitable to manage various components
- * of its operating system. (10 Active objects)
+ * of its operating system and application components. (10 Active objects)
  */
 
 #ifndef OS_H
@@ -22,7 +22,7 @@
 #define OS__NO_OF_THREADS    10
 #define NO_OF_CPU_REGS       15
 #define OS__STACK_SIZE       100 /* 100 * 4bytes (32bits)      */
-#define OS__SWITCH_TICK      10 /* context switch every 1ms */
+#define OS__SWITCH_TICK      1   /* context switch every 1ms   */
 #define OS__VOID             (void *)0
 
 

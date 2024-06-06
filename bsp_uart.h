@@ -1,3 +1,14 @@
+/**
+ * @file bsp_uart.h
+ * @author Chiemezie Alber Udoh (chiemezieudoh@gmail.com)
+ * @brief This UART uses a ringbuffer to tx and rx characters
+ *        Linux: sudo picocom -b 9600 /dev/ttyUSB0
+ * @version 0.1
+ * @date 2024-06-06
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 #ifndef BSP_UART_H
 #define BSP_UART_H
 
@@ -84,6 +95,15 @@ void BSP_UART__Init(void);
  * @arg unsigned char c byte to transmit.
  */
 void  BSP_UART__PutChar(unsigned char c);
+
+
+
+/**
+ * @brief 
+ * This function sends a string of characters via uart. 
+ * 
+ * @arg char *: pointer to char to transmit.
+ */
 void  BSP_UART__PutString(char *s);
 
 

@@ -1,7 +1,6 @@
 #include "bsp.h"
 #include "bsp_timer.h"
 
-extern uint8_t  OS__switchPeriod; 
 static uint16_t BSP_TIMER__tick=0;
 
 void BSP_TIMER__TA0_Init(t_timerTx0 *t)
@@ -47,15 +46,19 @@ void BSP_TIMER__DelayMs(uint16_t ticks)
 
 
 
+#if defined (OS)
 extern void OS__Tswitch(void);
+extern uint8_t OS__switchPeriod;
+#endif /* OS */
+
 __attribute__((interrupt(BSP_TIMER__VECTOR_IDX_TA0))) 
 void Timer_A0_ISR( void )
 {
-    extern uint8_t OS__switchPeriod;
     BSP_TIMER__tick++;
+
+#if defined (OS)
     OS__switchPeriod--;
 
-#if 1
     /* Switch context after 100 ms -> 1msec */
     if (OS__switchPeriod == 0)
     {
@@ -63,6 +66,6 @@ void Timer_A0_ISR( void )
         OS__Tswitch();
         ______enableInt();
     }
-#endif 
+#endif /* OS */
 
 }

@@ -27,7 +27,7 @@ static inline uint16_t PrintBaseNbrs(int nbr, uint8_t base, tenSerialNbrCase c)
     chr = SERIAL__NBR_DICT_STR[digit];
 
     /* Check if the character is either of ABCDE */
-    if ( (digit > 9) && (digit < 16) && c == SERIAL__enLowerCase)
+    if ( (digit > 9) && (digit < 16) && (c == SERIAL__enLowerCase))
     {
         BSP_UART__PutChar( (chr + 32) );
     }
