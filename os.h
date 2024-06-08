@@ -10,6 +10,10 @@
  * This ScratchOs is a loosely coupled operating systems for micro controller.
  * which employs the use of Active Objects suitable to manage various components
  * of its operating system and application components. (10 Active objects)
+ * 
+ * 
+ * 
+ * ## == CONTINUE FROM PAGE 139  === ## 
  */
 
 #ifndef OS_H
@@ -18,6 +22,9 @@
 #include "./xlib/xqueue/xqueue.h"
 #include "led.h"
 #include "bsp_timer.h"
+#include "os_evt.h"
+
+
 
 #define OS__NO_OF_THREADS    10
 #define NO_OF_CPU_REGS       15
@@ -51,11 +58,6 @@ typedef enum e_schedPolicy
 
 
 
-typedef enum
-{
-    OS__enEvtSigTimer=0,
-}   tenOsEvtSig;
-
 
 
 struct s_thread
@@ -64,7 +66,7 @@ struct s_thread
     uint8_t           tid;
     uint32_t          stack[OS__STACK_SIZE];
     tenOsThreadStatus status;
-    tenOsEvtSig       event;
+    t_osEvt           evt;
     uint8_t           period;
     uint8_t           priority;
     f_threadHandler   handler;
