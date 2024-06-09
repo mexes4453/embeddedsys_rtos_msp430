@@ -114,7 +114,22 @@ void  BSP_UART__PutString(char *s);
  * 
  * @return unsigned char
  */
-unsigned char BSP_UART__GetChar(void);
+ char BSP_UART__GetChar(void);
+
+
+
+/**
+ * @brief 
+ * This function receives a strings via uart. 
+ * @arg char *: pointer to char to receive string.
+ * 
+ * @return 
+ */
+void BSP_UART__GetString(char *c)
+
+
+
+
 
 t_uartBuf *BSP_UART__GetBufAddr(void);
 

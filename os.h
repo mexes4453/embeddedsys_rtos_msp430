@@ -67,7 +67,7 @@ struct s_thread
     uint32_t          stack[OS__STACK_SIZE];
     tenOsThreadStatus status;
     t_osEvt           evt;
-    uint8_t           period;
+    uint8_t           period;    /* tick count in ms */
     uint8_t           priority;
     f_threadHandler   handler;
     uint8_t           deadline;
@@ -119,5 +119,6 @@ tenOsRetCode OS__Fork(f_threadHandler handler, uint8_t priority, uint8_t period)
 tenOsRetCode OS__Kill(t_thread *t);
 tenOsRetCode OS__SetThreadStatus(t_thread *t, tenOsThreadStatus status);
 t_thread     *OS__GetCurrThread(void);
+void      OS__Delay(uint32_t ticks);
 
 #endif /* OS_H */

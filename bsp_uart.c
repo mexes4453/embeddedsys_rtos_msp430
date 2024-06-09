@@ -112,6 +112,41 @@ void  BSP_UART__PutString(char *s)
 
 
 
+
+char BSP_UART__GetChar(void)
+{
+    char c;
+
+    /**
+     * Check that that the rx buffer is not empty else loop until
+     * data is available in the buffer to consume */
+    while( RING_BUFFER__IsEmpty(&(uartBuf.rxBuf)) ){};
+
+    /* Retrieve data from the rx ring buffer within safe region
+       by disabling the interrupt */
+    BSP_UART__DisableInterrupt(BSP_UART__A0, BSP_UART__UCAx_B_RX);
+    c = RING_BUFFER__Get(&(uartBuf.rxBuf));
+    BSP_UART__EnableInterrupt(BSP_UART__A0, BSP_UART__UCAx_B_RX);
+
+    return c;
+}
+
+
+
+void BSP_UART__GetString(char *s)
+{
+    while ((*s = (char)BSP_UART__GetChar(void)) != '\r')
+    {
+        BSP_UART__PutChar(*s++);
+    }
+    /* Null terminate the string */
+    *s = 0;
+}
+
+
+
+
+
 __attribute__((interrupt(BSP_UART__VECTOR_IDX_A0))) 
 void BSP_UART__ISR_A0_TX_RX(void)
 {   

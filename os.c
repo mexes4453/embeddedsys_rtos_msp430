@@ -243,6 +243,16 @@ void OS__Tswitch(void)
 
 
 
+
+void  OS__Delay(uint32_t ticks)
+{
+    /* Review comopletely from scratch */
+    OS__SetThreadStatus(OS__GetCurrThread(), OS__enStatusFree);
+    OS__Sched();
+    //OS__Kill(OS__GetCurrThread());
+    OS__Tswitch();
+}
+
 #if 0
 void      OS__Suspend(int evtSig)
 {
@@ -322,7 +332,7 @@ int OS__V_CountSemaphore(t_osSemaphore *s)
 
     BSP__CriticalStart();
     s->value++;
-    if (s->value <= 0)
+    if (s->value >= 0)
     {
         OS__Signal(s);
     }
