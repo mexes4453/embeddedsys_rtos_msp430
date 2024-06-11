@@ -120,6 +120,7 @@ char BSP_UART__GetChar(void)
     /**
      * Check that that the rx buffer is not empty else loop until
      * data is available in the buffer to consume */
+    BSP_UART__EnableInterrupt(BSP_UART__A0, BSP_UART__UCAx_B_RX);
     while( RING_BUFFER__IsEmpty(&(uartBuf.rxBuf)) ){};
 
     /* Retrieve data from the rx ring buffer within safe region
@@ -135,12 +136,15 @@ char BSP_UART__GetChar(void)
 
 void BSP_UART__GetString(char *s)
 {
-    while ((*s = (char)BSP_UART__GetChar(void)) != '\r')
+    
+    //char *bufferAddr = s;
+    while ((*s = (char)BSP_UART__GetChar()) != '\r')
     {
         BSP_UART__PutChar(*s++);
     }
     /* Null terminate the string */
     *s = 0;
+    //s = bufferAddr;
 }
 
 

@@ -23,6 +23,7 @@ void copy_vector(void)
 
 //unsigned char i2cBuffer[BSP_I2C__BUF_SZ];
 tenOsRetCode osRetCode;
+char uart_str[20];
 
 int main(void)
 {
@@ -33,6 +34,8 @@ int main(void)
 	Init_TestPin();
     BSP_UART__Init();
     BSP_TIMER__TA0_Init( BSP_TIMER__TA0 );
+    UTILS__Memset(&(uart_str[0]), 0, 20);        /* Initialise the uart_str buffer */
+
 //  //BSP_I2C__Init( BSP_I2C__B0 );
 
     /* Initialise buffer to zero */
@@ -61,13 +64,9 @@ int main(void)
 #if 1
         SERIAL__PRINTF_1(SERIAL__enTxtColorMagenta, "Hello %d World\n", 2);
         SERIAL__PRINTF_0("Goodbye %d %d World\n", 2, 3);
+        BSP_UART__GetString(uart_str);
+        SERIAL__PRINTF_0(" %s\n", uart_str);
 #endif 
-#if 0
-        SERIAL__Printf(SERIAL__enTxtColorRed, "Hello World - UART \n");
-		SERIAL__Printf(SERIAL__enTxtColorMagenta, "Hello World - SERIAL: %%; nbr: %d; char: %c; -ve: %d; \n", 3752, 'b', -3752);
-		SERIAL__Printf(SERIAL__enTxtColorBlue,"Hello World - SERIAL: hex: %x; HEX: %X; bin: %b; \n", 555, 555, 38);
-		SERIAL__Printf(0,"Hello world\n");
-#endif
 	}
 }
 

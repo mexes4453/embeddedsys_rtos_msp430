@@ -45,6 +45,7 @@
  * -----------------
  * Only use when enough buffer is provided for addr.
  */
+inline void UTILS__Memset(void *addr, char value, unsigned int byteCnt);
 #define UTILS__MEMSET(addr,value,byteCnt)\
 {\
     if ((addr) != UTILS_NULL)\
