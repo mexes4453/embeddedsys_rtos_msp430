@@ -4,7 +4,7 @@
 
 void APP__TaskLed1(void)
 {
-    uint16_t volatile cnt=5000;
+    uint16_t volatile cnt=500;
     /* Red LED */
     while (1)
     {
@@ -22,7 +22,7 @@ void APP__TaskLed1(void)
 void APP__TaskLed2(void)
 {
     /* Green LED */
-    uint16_t volatile cnt=3000;
+    uint16_t volatile cnt=300;
     while (1)
     {
         led2_toggle();
