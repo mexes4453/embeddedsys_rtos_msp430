@@ -18,6 +18,8 @@
 
 #ifndef OS_H
 #define OS_H
+
+#define __OS__
 #include <stdint.h>
 #include "./xlib/xqueue/xqueue.h"
 #include "led.h"
@@ -71,7 +73,7 @@ struct s_thread
     uint8_t           priority;
     f_threadHandler   handler;
     uint8_t           deadline;
-    uint8_t           timeout;    /* No of ticks (1ms) */
+    uint32_t           timeout;    /* No of ticks (1ms) */
 };
 
 typedef struct 
@@ -86,7 +88,6 @@ typedef enum e_osRetCode
     OS__enRetSuccess = 0,
     OS__enRetFailure,
     OS__enRetErrForkFailed,
-    OS__enRetErrKillFailed,
 } tenOsRetCode;
 
 #define OS__THREAD_NULL      (t_thread *)0
@@ -116,9 +117,9 @@ int       OS__V_CountSemaphore(t_osSemaphore *s);
 int       OS__P_BinSemaphore(t_osSemaphore *s);
 int       OS__V_BinSemaphore(t_osSemaphore *s);
 tenOsRetCode OS__Fork(f_threadHandler handler, uint8_t priority, uint8_t period);
-tenOsRetCode OS__Kill(t_thread *t);
+void         OS__Kill(t_thread *t);
 tenOsRetCode OS__SetThreadStatus(t_thread *t, tenOsThreadStatus status);
 t_thread     *OS__GetCurrThread(void);
-void      OS__Delay(uint32_t ticks);
+void         OS__Delay(uint32_t ticks);
 
 #endif /* OS_H */

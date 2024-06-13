@@ -101,22 +101,22 @@ escape:
 
 
 
-tenOsRetCode OS__Kill(t_thread *t)
+void OS__Kill(t_thread *t)
 {
-    tenOsRetCode retCode = OS__enRetErrKillFailed;
     t_xqueue     *n = XQUEUE__NULL;
 
     if (!t) goto escape;
 
     t->status = OS__enStatusFree;
+    OS__Sched();
     n = XQUEUE__DequeueNode(&OS__threadQueueReady, (void *)t);
     if (n)
     {
         XQUEUE__StaticEnqueue(&OS__threadQueueFree, n);
-        retCode = OS__enRetSuccess;
     }
+    OS__Tswitch();
 escape:
-    return (retCode);
+    return ;
 }
 
 
@@ -246,12 +246,21 @@ void OS__Tswitch(void)
 
 void  OS__Delay(uint32_t ticks)
 {
-    /* Review comopletely from scratch */
-    OS__SetThreadStatus(OS__GetCurrThread(), OS__enStatusFree);
+    /* Note for the OS - 1 tick ~ 10ms */
+    t_xqueue     *n = XQUEUE__NULL;
+
+
+    OS__currThread->status = OS__enStatusSleep;
+    OS__currThread->timeout = ticks;
     OS__Sched();
-    //OS__Kill(OS__GetCurrThread());
+    n = XQUEUE__DequeueNode(&OS__threadQueueReady, (void *)OS__currThread);
+    if (n)
+    {
+        XQUEUE__StaticEnqueue(&OS__threadQueueSleep, n);
+    }
     OS__Tswitch();
 }
+
 
 #if 0
 void      OS__Suspend(int evtSig)

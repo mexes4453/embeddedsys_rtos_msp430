@@ -40,7 +40,7 @@ int main(void)
 
     /* Initialise buffer to zero */
     // UTILS__MEMSET(&(i2cBuffer[0]), 0, BSP_I2C__BUF_SZ);
-#if defined (OS)    
+#if defined (__OS__)    
     /* Initialise the operating system  */
     OS__Init(OS__enSchedPolicyRoundRobin);
 
@@ -61,7 +61,7 @@ int main(void)
 		//led2_toggle();
         //BSP_TIMER__DelayMs(500);
 		//TestPin_toggle();
-#if 1
+#if 0
         SERIAL__PRINTF_1(SERIAL__enTxtColorMagenta, "Hello %d World\n", 2);
         SERIAL__PRINTF_0("Goodbye %d %d World\n", 2, 3);
         BSP_UART__GetString(uart_str);

@@ -46,7 +46,7 @@ void BSP_TIMER__DelayMs(uint16_t ticks)
 
 
 
-#if defined (OS)
+#if !defined (__OS__)
 extern void OS__Tswitch(void);
 extern uint8_t OS__switchPeriod;
 #endif /* OS */
@@ -56,7 +56,7 @@ void Timer_A0_ISR( void )
 {
     BSP_TIMER__tick++;
 
-#if defined (OS)
+#if !defined (__OS__)
     OS__switchPeriod--;
 
     /* Switch context after 100 ms -> 1msec */

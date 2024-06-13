@@ -46,16 +46,6 @@
  * Only use when enough buffer is provided for addr.
  */
 inline void UTILS__Memset(void *addr, char value, unsigned int byteCnt);
-#define UTILS__MEMSET(addr,value,byteCnt)\
-{\
-    if ((addr) != UTILS_NULL)\
-    {\
-        for (int unsigned idx=0; idx<(byteCnt); idx++)\
-        {\
-            ((unsigned char *)(addr))[idx] = (value);\
-        }\
-    }\
-}
 
 
 
