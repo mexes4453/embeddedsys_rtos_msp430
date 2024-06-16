@@ -7,10 +7,25 @@ static t_thread         OS__threads[OS__NO_OF_THREADS];
 static t_xqueue         OS__threadPool[OS__NO_OF_THREADS];
 static t_xqueue        *OS__threadQueueFree, *OS__threadQueueReady; 
 static t_thread        *OS__currThread = OS__THREAD_NULL;
-t_xqueue               *OS__threadQueueSleep, *OS__threadQueueBlocked;
-t_xqueue               *OS__currThreadNode=XQUEUE__NULL;
-t_xqueue               *OS__nextThreadNode=XQUEUE__NULL;
+t_xqueue               *OS__threadQueueSleep = XQUEUE__NULL;
+t_xqueue               *OS__threadQueueBlocked = XQUEUE__NULL;
+static t_xqueue        *OS__currThreadNode=XQUEUE__NULL;
+static t_xqueue        *OS__nextThreadNode=XQUEUE__NULL;
 uint32_t                OS__switchPeriod = OS__SWITCH_TICK;
+
+
+inline t_xqueue *OS__GetNextThreadNode(void)
+{
+    return (OS__nextThreadNode);
+}
+
+
+
+inline t_xqueue *OS__GetCurrThreadNode(void)
+{
+    return (OS__currThreadNode);
+}
+
 
 
 static void      OS__TaskIdle(void)
@@ -19,9 +34,9 @@ static void      OS__TaskIdle(void)
     {
         /* flash lights */
         led1_toggle();
-        BSP_TIMER__DelayMs(1000);
+        BSP_TIMER__DelayMs(30);
         led2_toggle();
-        BSP_TIMER__DelayMs(1000);
+        BSP_TIMER__DelayMs(30);
 
         /* nothing for cpu to do */
         /* switch to low power mode with interrupt */
@@ -107,6 +122,7 @@ void OS__Kill(t_thread *t)
 
     if (!t) goto escape;
 
+    BSP__CRITICAL_SECTION_START();
     t->status = OS__enStatusFree;
     OS__Sched();
     n = XQUEUE__DequeueNode(&OS__threadQueueReady, (void *)t);
@@ -115,6 +131,7 @@ void OS__Kill(t_thread *t)
         XQUEUE__StaticEnqueue(&OS__threadQueueFree, n);
     }
     OS__Tswitch();
+    BSP__CRITICAL_SECTION_END();
 escape:
     return ;
 }
@@ -150,6 +167,7 @@ void OS__ThreadInit(t_thread * const me)
 }
 
 
+/* This function must be called from within a critical section */
 void OS__Sched(void)
 {
 
@@ -221,8 +239,7 @@ void OS__Tswitch(void)
               );
     }
 
-    /* Schedule the next thread/process to run on the CPU - Processor */
-    OS__Sched(); 
+    /* Update the current thread with the next scheduled thread to run */
     OS__currThreadNode = OS__nextThreadNode;
     OS__currThread = (t_thread *)(OS__currThreadNode->content);
     OS__switchPeriod = OS__SWITCH_TICK;
@@ -249,7 +266,7 @@ void  OS__Delay(uint32_t ticks)
     /* Note for the OS - 1 tick ~ 10ms */
     t_xqueue     *n = XQUEUE__NULL;
 
-
+    BSP__CRITICAL_SECTION_START();
     OS__currThread->status = OS__enStatusSleep;
     OS__currThread->timeout = ticks;
     OS__Sched();
@@ -259,8 +276,49 @@ void  OS__Delay(uint32_t ticks)
         XQUEUE__StaticEnqueue(&OS__threadQueueSleep, n);
     }
     OS__Tswitch();
+    BSP__CRITICAL_SECTION_END();
 }
 
+
+
+
+void  OS__Tick(void)
+{
+    t_xqueue     *n = OS__threadQueueSleep;
+    t_xqueue     *node = XQUEUE__NULL;
+    t_thread     *t = OS__THREAD_NULL;
+    unsigned int itemCnt;
+    
+    /* Get the number of threads in sleep queue */
+    itemCnt = XQUEUE__GetLevel(&OS__threadQueueSleep);
+
+    while (itemCnt--)
+    {
+        t = (t_thread *)(XQUEUE__GetItem(n));
+        t->timeout--;
+        if ( !(t->timeout) )  /* sleep time has elapse - bring back to service */
+        {
+            t->status = OS__enStatusReady;
+            node = XQUEUE__DequeueNode(&OS__threadQueueSleep, (void *)t);
+            if (node)
+            {
+                XQUEUE__StaticEnqueue(&OS__threadQueueReady, node);
+            }
+        }
+        n = n->next;
+    }
+}
+
+
+
+void   OS__Start(void)
+{
+    /* Schedule thread next thread to run */
+    OS__Sched();
+
+    /* Enable interrupt to commence operating system */
+    ______enableInt();
+}
 
 #if 0
 void      OS__Suspend(int evtSig)

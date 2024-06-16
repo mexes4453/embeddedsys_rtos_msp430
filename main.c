@@ -8,7 +8,7 @@
 # include "app.h"
 # include "utils.h"
 
-#if defined (OS)    
+#if defined (__OS__)    
 # include "os.h"
 #endif /* OS  */
 
@@ -27,6 +27,8 @@ char uart_str[20];
 
 int main(void)
 {
+
+    /* Hardware Initialisation */
 	BSP__DISABLE_WDT();
 	______disableInt();
 //	BSP__ConfigureClock();                  /* default clk freq:1MHz; configure clock 16MHz */
@@ -47,12 +49,19 @@ int main(void)
     /* Spawn threads */
     osRetCode = OS__Fork(APP__TaskLed1, 4, 20);
     osRetCode = OS__Fork(APP__TaskLed2, 5, 50);
-#endif /* OS  */
+
+    /* Transfer the control to the operating system */
+    OS__Start();  
+
+#else /* Execute normally without scratchOS */
+
     ______enableInt();
+
+#endif /* OS  */
 
 	while (1)
 	{
-        BSP_TIMER__DelayMs(10);
+        BSP_TIMER__DelayMs(1000);
 		//led1_toggle();
 		//led2_toggle();
         //BSP_I2C__Read(BSP_I2C__B0, 0x68, 25, &(i2cBuffer[0]));

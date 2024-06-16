@@ -9,7 +9,8 @@ void APP__TaskLed1(void)
     while (1)
     {
         led1_toggle();
-        BSP_TIMER__DelayMs(30);
+        //BSP_TIMER__DelayMs(30);
+        OS__Delay(30); /* 1 tick ~ 1ms */
         if ( !(cnt--) )
         {
             OS__Kill(OS__GetCurrThread());
@@ -26,7 +27,8 @@ void APP__TaskLed2(void)
     while (1)
     {
         led2_toggle();
-        BSP_TIMER__DelayMs(30);
+        //BSP_TIMER__DelayMs(30);
+        OS__Delay(30); /* 1 tick ~ 1ms */
         if ( !(cnt--) )
         {
             OS__Kill(OS__GetCurrThread());

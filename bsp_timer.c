@@ -1,5 +1,6 @@
 #include "bsp.h"
 #include "bsp_timer.h"
+#include "os.h"
 
 static uint16_t BSP_TIMER__tick=0;
 
@@ -46,8 +47,7 @@ void BSP_TIMER__DelayMs(uint16_t ticks)
 
 
 
-#if !defined (__OS__)
-extern void OS__Tswitch(void);
+#if defined (__OS__)
 extern uint8_t OS__switchPeriod;
 #endif /* OS */
 
@@ -56,16 +56,25 @@ void Timer_A0_ISR( void )
 {
     BSP_TIMER__tick++;
 
-#if !defined (__OS__)
+#if defined (__OS__)  /* Framework */
     OS__switchPeriod--;
+    /* decrement sleep time for all threads in sleep queue */
+    OS__Tick();
+    
+    /* Schedule the next thread/process to run on the CPU - Processor */
+    OS__Sched(); 
 
-    /* Switch context after 100 ms -> 1msec */
+    /* Switch context after 10ms - 1 tick */
     if (OS__switchPeriod == 0)
     {
-        ______disableInt();
-        OS__Tswitch();
-        ______enableInt();
+        if (OS__GetCurrThreadNode() != OS__GetNextThreadNode())
+        {
+            ______disableInt();
+            OS__Tswitch();
+            ______enableInt();
+        }
     }
 #endif /* OS */
+
 
 }

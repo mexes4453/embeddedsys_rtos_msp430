@@ -30,8 +30,8 @@
 
 #define OS__NO_OF_THREADS    10
 #define NO_OF_CPU_REGS       15
-#define OS__STACK_SIZE       100 /* 100 * 4bytes (32bits)      */
-#define OS__SWITCH_TICK      1   /* context switch every 1ms   */
+#define OS__STACK_SIZE       100  /* 100 * 4bytes (32bits)      */
+#define OS__SWITCH_TICK      1    /* context switch every 10ms  - 100Hz - 1tick */
 #define OS__VOID             (void *)0
 
 
@@ -73,14 +73,18 @@ struct s_thread
     uint8_t           priority;
     f_threadHandler   handler;
     uint8_t           deadline;
-    uint32_t           timeout;    /* No of ticks (1ms) */
+    uint32_t          timeout;    /* No of ticks (1ms) */
 };
+
+
 
 typedef struct 
 {
     int value;
     t_xqueue *threadQueue; /* Queue to add threads waiting on semaphore */
 }   t_osSemaphore;
+
+
 
 
 typedef enum e_osRetCode
@@ -120,6 +124,13 @@ tenOsRetCode OS__Fork(f_threadHandler handler, uint8_t priority, uint8_t period)
 void         OS__Kill(t_thread *t);
 tenOsRetCode OS__SetThreadStatus(t_thread *t, tenOsThreadStatus status);
 t_thread     *OS__GetCurrThread(void);
+inline t_xqueue *OS__GetCurrThreadNode(void);
+inline t_xqueue *OS__GetNextThreadNode(void);
 void         OS__Delay(uint32_t ticks);
+void         OS__Start(void);
+
+
+/* === FRAME WORK ACTION === */
+void  OS__Tick(void);
 
 #endif /* OS_H */
