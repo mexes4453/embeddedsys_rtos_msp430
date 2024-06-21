@@ -58,15 +58,17 @@ void Timer_A0_ISR( void )
 
 #if defined (__OS__)  /* Framework */
     OS__switchPeriod--;
-    /* decrement sleep time for all threads in sleep queue */
-    OS__Tick();
-    
-    /* Schedule the next thread/process to run on the CPU - Processor */
-    OS__Sched(); 
 
     /* Switch context after 10ms - 1 tick */
-    if (OS__switchPeriod == 0)
+    if (OS__switchPeriod <= 0)
     {
+        OS__switchPeriod = OS__SWITCH_TICK;
+        /* decrement sleep time for all threads in sleep queue */
+        OS__Tick();
+
+        /* Schedule the next thread/process to run on the CPU - Processor */
+        OS__Sched();
+
         if (OS__GetCurrThreadNode() != OS__GetNextThreadNode())
         {
             ______disableInt();

@@ -69,24 +69,24 @@ void BSP_I2C__Read(t_i2cBx *i, unsigned char devAddr,
     //TestPin_toggle();
 
     TestPin_toggle();
-    led1_toggle();
+    DEV_LED__ToggleGreen();
     i->CTL1 |= (BSP_I2C__R_CTL1_B1_UCSTT);  /* Generate start condition STT*/
     led1_toggle();
     TestPin_toggle();
 
     // Wait until STT is cleared after sending slave addr
     TestPin_toggle();
-    led1_toggle();
+    DEV_LED__ToggleGreen();
     while (i->CTL1 & (BSP_I2C__R_CTL1_B1_UCSTT));
-    led1_toggle();
+    DEV_LED__ToggleGreen();
     TestPin_toggle();
 
     // Poll the RXIFG to check if data is received
     TestPin_toggle();
-    led1_toggle();
+    DEV_LED__ToggleGreen();
     while (!(i->IFG & (BSP_I2C__R_IFG_B0_UCRXIFG + 0x20 )));
     TestPin_toggle();
-    led1_toggle();
+    DEV_LED__ToggleGreen();
 
     /* retrieve data */
     *dataBuffer = i->RXBUF;

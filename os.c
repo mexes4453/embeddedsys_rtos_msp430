@@ -11,7 +11,7 @@ t_xqueue               *OS__threadQueueSleep = XQUEUE__NULL;
 t_xqueue               *OS__threadQueueBlocked = XQUEUE__NULL;
 static t_xqueue        *OS__currThreadNode=XQUEUE__NULL;
 static t_xqueue        *OS__nextThreadNode=XQUEUE__NULL;
-uint32_t                OS__switchPeriod = OS__SWITCH_TICK;
+int32_t                 OS__switchPeriod = OS__SWITCH_TICK;
 
 
 inline t_xqueue *OS__GetNextThreadNode(void)
@@ -33,10 +33,10 @@ static void      OS__TaskIdle(void)
     while (1)
     {
         /* flash lights */
-        led1_toggle();
-        BSP_TIMER__DelayMs(30);
-        led2_toggle();
-        BSP_TIMER__DelayMs(30);
+        DEV_LED__ToggleRed();
+        BSP_TIMER__DelayMs(1000);
+        DEV_LED__ToggleGreen();
+        BSP_TIMER__DelayMs(1000);
 
         /* nothing for cpu to do */
         /* switch to low power mode with interrupt */
@@ -66,7 +66,7 @@ void OS__Init(tenOsSchedPolicy schedPolicy)
 
 
 
-tenOsRetCode OS__Fork(f_threadHandler handler, uint8_t priority, uint8_t period)
+tenOsRetCode OS__Fork(f_threadHandler handler, uint8_t priority, int32_t period)
 {
     tenOsRetCode retCode = OS__enRetErrForkFailed;
     t_xqueue     *qEntry = XQUEUE__Dequeue(&OS__threadQueueFree);
@@ -170,6 +170,9 @@ void OS__ThreadInit(t_thread * const me)
 /* This function must be called from within a critical section */
 void OS__Sched(void)
 {
+    uint8_t  qLevel;
+    t_xqueue *tmpNode;
+    t_thread *tmpThread;
 
     if (OS__currThreadNode != OS__nextThreadNode)
     {
@@ -206,18 +209,30 @@ void OS__Sched(void)
      * Attempt to skip the idle thread if there are other threads
      * in the ready queue.
      * The idle thread is scheduled only if it's the only thread within
-     * the queue */
-    if ((OS__nextThreadNode->qid == 0) ) 
+     * the queue in a ready state */
+    if ((OS__nextThreadNode->qid == OS__IDLE_THREAD_NODE_ID) ) 
     {
-        if ( XQUEUE__GetLevel(&OS__threadQueueReady) == 2 &&
-           (((t_thread *)(OS__nextThreadNode->next->content))->status != OS__enStatusReady)
-        )
-        { /* schedule idle thread */}
-        else 
+        tmpNode = OS__nextThreadNode; /* store the idle thread node */ 
+        qLevel = XQUEUE__GetLevel(&OS__threadQueueReady);
+        do
         {
             OS__nextThreadNode = OS__nextThreadNode->next;
-        }
+            tmpThread = (t_thread *)(XQUEUE__GetItem(OS__nextThreadNode));
+            if ( (tmpThread->status == OS__enStatusReady) && 
+                 (OS__nextThreadNode->qid != OS__IDLE_THREAD_NODE_ID) )
+            {
+                /* Found the next non-idle thread in ready to run state as next to schedule */
+                goto escape;
+            }
+            
+        } while (--qLevel); /* next node */
+
+        /* If no ready thread is found, then next thread node will be idle thread */
+        OS__nextThreadNode = tmpNode;
+        
     }
+escape:
+    return ;
 }
 
 
@@ -243,6 +258,7 @@ void OS__Tswitch(void)
     OS__currThreadNode = OS__nextThreadNode;
     OS__currThread = (t_thread *)(OS__currThreadNode->content);
     OS__switchPeriod = OS__SWITCH_TICK;
+    //OS__switchPeriod = OS__currThread->period;
     
     /* Restore the context of newly scheduled thread from its private stack */
     __asm(
@@ -265,11 +281,15 @@ void  OS__Delay(uint32_t ticks)
 {
     /* Note for the OS - 1 tick ~ 10ms */
     t_xqueue     *n = XQUEUE__NULL;
+    
+    /* the idle thread should never be blocked  */
+    UTILS__ASSERT_REDIRECT((OS__currThreadNode->qid == OS__IDLE_THREAD_NODE_ID), escape);
 
     BSP__CRITICAL_SECTION_START();
     OS__currThread->status = OS__enStatusSleep;
     OS__currThread->timeout = ticks;
     OS__Sched();
+    /* Block the current thread */
     n = XQUEUE__DequeueNode(&OS__threadQueueReady, (void *)OS__currThread);
     if (n)
     {
@@ -277,6 +297,8 @@ void  OS__Delay(uint32_t ticks)
     }
     OS__Tswitch();
     BSP__CRITICAL_SECTION_END();
+escape:
+    return ;
 }
 
 

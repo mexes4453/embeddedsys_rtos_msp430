@@ -4,15 +4,16 @@
 
 void APP__TaskLed1(void)
 {
-    uint16_t volatile cnt=500;
+    uint32_t volatile cnt=200000;
     /* Red LED */
     while (1)
     {
-        led1_toggle();
+        DEV_LED__ToggleRed();
         //BSP_TIMER__DelayMs(30);
-        OS__Delay(30); /* 1 tick ~ 1ms */
+        OS__Delay(5); /* 1 tick ~ 1ms */
         if ( !(cnt--) )
         {
+            DEV_LED__OffRed();
             OS__Kill(OS__GetCurrThread());
         }
     }
@@ -23,14 +24,15 @@ void APP__TaskLed1(void)
 void APP__TaskLed2(void)
 {
     /* Green LED */
-    uint16_t volatile cnt=300;
+    uint32_t volatile cnt=100000;
     while (1)
     {
-        led2_toggle();
+        DEV_LED__ToggleGreen();
         //BSP_TIMER__DelayMs(30);
-        OS__Delay(30); /* 1 tick ~ 1ms */
+        OS__Delay(5); /* 1 tick ~ 1ms */
         if ( !(cnt--) )
         {
+            DEV_LED__OffGreen();
             OS__Kill(OS__GetCurrThread());
         }
     }

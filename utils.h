@@ -60,6 +60,9 @@ inline void UTILS__Memset(void *addr, char value, unsigned int byteCnt);
 #define UTILS_ASSERT(cond) \
     if (!cond) while (1); \
 
+#define UTILS__ASSERT_REDIRECT(cond, label) \
+    if (!cond) goto label; \
+
 
 /*
  * This macro reads the value of a bit in a register or memory address
@@ -108,7 +111,7 @@ inline void UTILS__Memset(void *addr, char value, unsigned int byteCnt);
 
 
 /*
- * This macro is returns the bit value of a register given the bitmask
+ * This macro returns the bit value of a register given the bitmask
  * @regAddr : Register to be configured (clear bits values)
  * @bitMask : Bits to be cleared on register
  *          : Example -> 0x03. Clears bits 0 and 1 on given register

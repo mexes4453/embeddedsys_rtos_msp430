@@ -32,7 +32,7 @@ int main(void)
 	BSP__DISABLE_WDT();
 	______disableInt();
 //	BSP__ConfigureClock();                  /* default clk freq:1MHz; configure clock 16MHz */
-	led_init();
+	DEV_LED___Init();
 	Init_TestPin();
     BSP_UART__Init();
     BSP_TIMER__TA0_Init( BSP_TIMER__TA0 );
