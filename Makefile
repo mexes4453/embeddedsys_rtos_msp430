@@ -35,7 +35,7 @@ FILE_OUT_DISASS = disassemble.txt
 FILE_OUT_SYMS = symbols.txt
 
 SRCS = 	main.c \
-    led.c \
+    dev_led.c \
 	bsp.c \
 	bsp_uart.c \
 	bsp_timer.c \

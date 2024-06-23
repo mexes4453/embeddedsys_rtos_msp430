@@ -10,7 +10,7 @@ void APP__TaskLed1(void)
     {
         DEV_LED__ToggleRed();
         //BSP_TIMER__DelayMs(30);
-        OS__Delay(5); /* 1 tick ~ 1ms */
+        OS__Delay(10); /* 1 tick ~ 1ms */
         if ( !(cnt--) )
         {
             DEV_LED__OffRed();
