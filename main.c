@@ -49,6 +49,7 @@ int main(void)
     /* Spawn threads */
     osRetCode = OS__Fork(APP__TaskLed1, 4, 20);
     osRetCode = OS__Fork(APP__TaskLed2, 5, 50);
+    osRetCode = OS__Fork(APP__TaskLed3, 5, 50);
 
     /* Transfer the control to the operating system */
     OS__Start();  

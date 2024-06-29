@@ -37,3 +37,22 @@ void APP__TaskLed2(void)
         }
     }
 }
+
+
+
+void APP__TaskLed3(void)
+{
+    /* Green LED */
+    uint32_t volatile cnt=100000;
+    while (1)
+    {
+        DEV_LED__ToggleGreen();
+        //BSP_TIMER__DelayMs(30);
+        OS__Delay(5); /* 1 tick ~ 1ms */
+        if ( !(cnt--) )
+        {
+            DEV_LED__OffGreen();
+            OS__Kill(OS__GetCurrThread());
+        }
+    }
+}

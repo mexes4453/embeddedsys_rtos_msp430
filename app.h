@@ -8,5 +8,6 @@
 
 void APP__TaskLed1(void);
 void APP__TaskLed2(void);
+void APP__TaskLed3(void);
 
 #endif /* APP_H */
