@@ -26,6 +26,8 @@
 #include "bsp_timer.h"
 #include "os_evt.h"
 #include "utils.h"
+#include "serial.h"
+
 
 
 

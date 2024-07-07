@@ -37,9 +37,11 @@ static void      OS__TaskIdle(void)
         BSP_TIMER__DelayMs(1000);
         DEV_LED__ToggleGreen();
         BSP_TIMER__DelayMs(1000);
+        SERIAL__Printf(SERIAL__enTxtColorDefault, "Idle thread (%d) - running\n",
+                                                   OS__currThread->tid);
 
         /* nothing for cpu to do */
-        /* switch to low power mode with interrupt */
+        /* switch to low power mode with interrupt active */
     }
 }
 

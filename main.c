@@ -47,11 +47,13 @@ int main(void)
     OS__Init(OS__enSchedPolicyRoundRobin);
 
     /* Spawn threads */
-    osRetCode = OS__Fork(APP__TaskLed1, 4, 20);
-    osRetCode = OS__Fork(APP__TaskLed2, 5, 50);
-    osRetCode = OS__Fork(APP__TaskLed3, 5, 50);
+    osRetCode = OS__Fork(APP__Task1, 4, 20);
+    osRetCode = OS__Fork(APP__Task2, 5, 50);
+    //osRetCode = OS__Fork(APP__Task3, 5, 50);
+    //osRetCode = OS__Fork(APP__Task4, 5, 50);
 
     /* Transfer the control to the operating system */
+    //SERIAL__Printf(SERIAL__enTxtColorGreen, "Launching OS...\n");
     OS__Start();  
 
 #else /* Execute normally without scratchOS */
@@ -63,15 +65,10 @@ int main(void)
 	while (1)
 	{
         BSP_TIMER__DelayMs(1000);
-		//led1_toggle();
-		//led2_toggle();
         //BSP_I2C__Read(BSP_I2C__B0, 0x68, 25, &(i2cBuffer[0]));
-		//led2_toggle();
-		//led1_toggle();
-		//led2_toggle();
-        //BSP_TIMER__DelayMs(500);
 		//TestPin_toggle();
 #if 0
+        SERIAL__Printf(SERIAL__enTxtColorGreen, "Disable OS...\n");
         SERIAL__PRINTF_1(SERIAL__enTxtColorMagenta, "Hello %d World\n", 2);
         SERIAL__PRINTF_0("Goodbye %d %d World\n", 2, 3);
         BSP_UART__GetString(uart_str);

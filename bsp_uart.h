@@ -69,7 +69,7 @@ typedef struct
 
 
 #define BSP_UART__A0        ((t_uartAx *)BSP_UART__TA0_BASE_ADDR)
-#define BSP_UART__BUFSZ     (20)
+#define BSP_UART__BUFSZ     (100)
 
 typedef struct 
 {
